@@ -364,6 +364,53 @@ export const useVotingContract = () => {
         return new Date(Number(timestamp) * 1000).toLocaleString();
     };
 
+    // Check if voter is verified
+    const isVoterVerified = async (voterAddress) => {
+        try {
+            console.log('Checking verification for address:', voterAddress);
+            console.log('Contract:', contract);
+            
+            const isVerified = await readContract({
+                contract,
+                method: CONTRACT_FUNCTIONS.IS_VOTER_VERIFIED,
+                params: [voterAddress]
+            });
+            
+            console.log('Verification result:', isVerified);
+            return Boolean(isVerified);
+        } catch (err) {
+            console.error('Error checking voter verification:', err);
+            console.error('Error details:', {
+                message: err.message,
+                stack: err.stack,
+                voterAddress,
+                contractAddress: contract?.address
+            });
+            
+            // In case of error, return false to redirect to registration
+            return false;
+        }
+    };
+
+    // Get voter embeddings
+    const getVoterEmbeddings = async () => {
+        if (!account) {
+            throw new Error('Please connect your wallet');
+        }
+
+        try {
+            const embeddings = await readContract({
+                contract,
+                method: CONTRACT_FUNCTIONS.GET_VOTER_EMBEDDINGS,
+                params: []
+            });
+            return embeddings;
+        } catch (err) {
+            console.error('Error getting voter embeddings:', err);
+            throw new Error('Failed to get voter embeddings');
+        }
+    };
+
     // Status display helpers
     const getStatusDisplay = (status) => statusDisplayMap[status] || 'UNKNOWN';
     const getMutabilityDisplay = (mutability) => mutabilityDisplayMap[mutability] || 'UNKNOWN';
@@ -385,6 +432,10 @@ export const useVotingContract = () => {
         getVoteCount,
         getUserParticipatedProposals,
         getUserCreatedProposals,
+        
+        // Verification functions
+        isVoterVerified,
+        getVoterEmbeddings,
         
         // Helpers
         formatDate,

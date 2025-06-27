@@ -59,5 +59,6 @@ export const CONTRACT_FUNCTIONS = {
     UPDATE_PROPOSAL_STATUS: "function updateProposalStatus(uint256 proposalId) external",
     IS_PROPOSAL_FINALIZED: "function isProposalFinalized(uint256 proposalId) external view returns (bool)",
     GET_VOTER_EMBEDDINGS: "function getVoterEmbeddings() external view returns (int256[] memory)",
-    IS_PROPOSAL_EXISTS: "function isProposalExists(uint256 proposalId) external view returns (bool)"
+    IS_PROPOSAL_EXISTS: "function isProposalExists(uint256 proposalId) external view returns (bool)",
+    IS_VOTER_VERIFIED: "function isVoterVerified(address voter) external view returns (bool)"
 }; 
