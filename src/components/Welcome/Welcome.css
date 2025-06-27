@@ -94,22 +94,27 @@
 
 /* ThirdWeb Connect Button Styling */
 .button-container [data-theme] {
-    background-color: transparent !important;
-    color: aliceblue !important;
-    border: 1px solid #0f99a0 !important;
-    border-radius: 8px !important;
+    background: var(--gradient-primary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-primary, #6366f1) !important;
+    border-radius: var(--radius-md) !important;
     padding: 1rem 2rem !important;
-    font-family: 'Times New Roman', Times, serif !important;
-    font-weight: bold !important;
+    font-family: var(--font-primary) !important;
+    font-weight: 600 !important;
     font-size: 1.2rem !important;
     cursor: pointer !important;
-    transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease !important;
+    transition: all 0.3s ease !important;
     text-align: center !important;
+    box-shadow: var(--shadow-md) !important;
+    text-transform: none !important;
+    letter-spacing: 0.025em !important;
 }
 
 .button-container [data-theme]:hover {
-    background-color: rgba(19, 138, 144) !important;
-    transform: scale(1.05) !important;
+    background: linear-gradient(135deg, #8b7cf6 0%, #7c3aed 100%) !important;
+    box-shadow: var(--shadow-lg) !important;
+    transform: translateY(-2px) !important;
+    border-color: #8b7cf6 !important;
 }
 
 /* Navigation Connect Button Styling */
@@ -164,12 +169,3 @@ nav [data-theme]:hover {
     to { opacity: 1; }
 }
 
-/* Help Text */
-.help-text {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.9rem;
-    margin-top: 1rem;
-    text-align: center;
-    line-height: 1.4;
-    font-style: italic;
-}

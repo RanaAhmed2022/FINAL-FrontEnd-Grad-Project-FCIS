@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ConnectButton, useActiveAccount } from "thirdweb/react";
 import { client, wallets } from "../../thirdwebConfig";
 import { zkSyncSepolia } from "thirdweb/chains";
@@ -256,11 +256,7 @@ const Welcome = () => {
                     }}
                 />
                 
-                {/* Optional: Add a help text */}
-                <p className="help-text">
-                    Connect your wallet to login or signup.<br />
-                    New users will be guided through the registration process.
-                </p>
+
             </div>
         </div>
     );

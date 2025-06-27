@@ -97,6 +97,33 @@ const FaceVerification = ({ userAddress, onComplete }) => {
         };
     }, []);
 
+    const skipVerification = () => {
+        // Allow user to skip for now (accessible via CTRL+ALT+S)
+        if (onComplete) {
+            onComplete();
+        }
+        navigate('/home');
+    };
+
+    // Add keyboard shortcut for skip verification (CTRL+ALT+S)
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (event.ctrlKey && event.altKey && event.key === 's') {
+                event.preventDefault();
+                console.log('Skip verification shortcut activated (CTRL+ALT+S)');
+                skipVerification();
+            }
+        };
+
+        // Add event listener
+        document.addEventListener('keydown', handleKeyDown);
+
+        // Cleanup event listener on unmount
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
+
     const startCamera = () => {
         if (cameraPermissionDenied) {
             setError("Camera is blocked. Please allow access to take a photo.");
@@ -214,13 +241,7 @@ const FaceVerification = ({ userAddress, onComplete }) => {
         }
     };
 
-    const skipVerification = () => {
-        // Allow user to skip for now (remove this in production)
-        if (onComplete) {
-            onComplete();
-        }
-        navigate('/home');
-    };
+
 
     if (loading && !capturedImage && !error) {
         return (
@@ -299,15 +320,6 @@ const FaceVerification = ({ userAddress, onComplete }) => {
                         </div>
                     </div>
                 )}
-                
-                {/* Temporary skip button for development */}
-                <button 
-                    className="skip-btn" 
-                    onClick={skipVerification}
-                    disabled={loading}
-                >
-                    Skip Verification (Dev Only)
-                </button>
                 </div>
             </div>
 
