@@ -97,39 +97,21 @@ const ProposalSearch = () => {
         setSelectedOption('');
 
         try {
-            console.log('=== DETAILED DEBUG INFO ===');
-            console.log('Searching for proposal ID:', searchId);
-            console.log('Contract address:', contract.address);
-            console.log('Raw account object:', account);
-            console.log('Account address:', account?.address);
-            console.log('Account type:', typeof account);
-            console.log('Account keys:', account ? Object.keys(account) : 'No account');
-            console.log('Is account truthy:', !!account);
-            
             // Check if we have a valid address
             const accountAddress = account?.address;
-            console.log('Extracted account address:', accountAddress);
-            console.log('Address type:', typeof accountAddress);
-            console.log('Address length:', accountAddress?.length);
             
             if (!accountAddress) {
-                console.error('❌ NO ACCOUNT ADDRESS FOUND!');
                 setError('No wallet address found. Please reconnect your wallet.');
                 return;
             }
             
-            console.log('✅ Using account address:', accountAddress);
-            
             // First check if proposal exists using isProposalExists
-            console.log('🔍 Checking if proposal exists...');
             const proposalExists = await readContract({
                 contract,
                 method: CONTRACT_FUNCTIONS.IS_PROPOSAL_EXISTS,
                 params: [searchId],
                 account: account
             });
-            
-            console.log('✅ Proposal exists check result:', proposalExists);
             
             if (!proposalExists) {
                 setError('Proposal not found. Please check the Proposal ID and try again.');
@@ -138,7 +120,6 @@ const ProposalSearch = () => {
 
             // Update proposal status before getting details (silent operation)
             try {
-                console.log('🔄 Updating proposal status silently...');
                 const updateStatusTransaction = prepareContractCall({
                     contract,
                     method: CONTRACT_FUNCTIONS.UPDATE_PROPOSAL_STATUS,
@@ -150,42 +131,28 @@ const ProposalSearch = () => {
                     account
                 });
                 
-                console.log('✅ Status update transaction sent:', updateResult.transactionHash);
-                
                 // Wait for transaction confirmation
-                console.log('⏳ Waiting for status update confirmation...');
                 await updateResult.wait();
-                console.log('✅ Proposal status update confirmed');
                 
             } catch (statusUpdateError) {
-                // Don't show error to user, just log it - the status update is optional
-                console.log('ℹ️ Status update failed (non-critical):', statusUpdateError.message);
+                // Don't show error to user - the status update is optional
+                // Status update failed, but this is non-critical
             }
 
-            // Try different approaches to get proposal details with proper verification
-            console.log('🔍 Calling getProposalDetails with multiple methods:');
-            console.log('  - Proposal ID:', searchId);
-            console.log('  - Account:', accountAddress);
-            console.log('  - Contract:', contract.address);
-            
+            // Try different approaches to get proposal details
             let proposalDetails;
             
             try {
                 // Method 1: Try readContract with from parameter (if supported)
-                console.log('📖 Attempting readContract with from parameter...');
                 proposalDetails = await readContract({
                     contract,
                     method: CONTRACT_FUNCTIONS.GET_PROPOSAL_DETAILS,
                     params: [searchId],
                     from: accountAddress
                 });
-                console.log('✅ Proposal details received via readContract with from:', proposalDetails);
             } catch (readError) {
-                console.log('❌ readContract with from failed:', readError.message);
-                
                 try {
                     // Method 2: Use simulateTransaction as fallback
-                    console.log('🔄 Attempting simulateTransaction...');
                     const proposalDetailsTransaction = prepareContractCall({
                         contract,
                         method: CONTRACT_FUNCTIONS.GET_PROPOSAL_DETAILS,
@@ -198,9 +165,7 @@ const ProposalSearch = () => {
                     });
 
                     proposalDetails = proposalDetailsResult.returnValue;
-                    console.log('✅ Proposal details received via simulation:', proposalDetails);
                 } catch (simError) {
-                    console.log('❌ simulateTransaction failed:', simError.message);
                     throw simError; // Re-throw to be caught by outer try-catch
                 }
             }
@@ -208,23 +173,16 @@ const ProposalSearch = () => {
             // Get user's current vote using multiple methods
             let currentVote = '';
             try {
-                console.log('🗳️ Getting user vote for account:', account?.address);
-                
                 try {
                     // Method 1: Try readContract with from parameter
-                    console.log('📖 Attempting user vote via readContract with from...');
                     currentVote = await readContract({
                         contract,
                         method: CONTRACT_FUNCTIONS.GET_VOTER_SELECTED_OPTION,
                         params: [searchId],
                         from: accountAddress
                     });
-                    console.log('✅ User current vote via readContract with from:', currentVote);
                 } catch (readError) {
-                    console.log('❌ readContract with from failed for vote:', readError.message);
-                    
                     // Method 2: Use simulateTransaction as fallback
-                    console.log('🔄 Attempting user vote via simulateTransaction...');
                     const userVoteTransaction = prepareContractCall({
                         contract,
                         method: CONTRACT_FUNCTIONS.GET_VOTER_SELECTED_OPTION,
@@ -237,11 +195,9 @@ const ProposalSearch = () => {
                     });
                     
                     currentVote = userVoteResult.returnValue;
-                    console.log('✅ User current vote via simulation:', currentVote);
                 }
             } catch (err) {
-                console.log('❌ Error getting user vote:', err.message);
-                console.log('Vote query failed with account:', account?.address);
+                // Error getting user vote - this is non-critical
             }
 
             setProposal({
@@ -516,17 +472,13 @@ const ProposalSearch = () => {
             </header>
 
             <div className="search-proposal-container">
-                {/* Header Section */}
-                <div className="search-header">
-                    <div className="form-header">
-                        <h1 className="page-title">Search & Vote on Proposals</h1>
-                        <p className="page-subtitle">Find and participate in active proposals</p>
-                    </div>
-                </div>
-
-                {/* Search Section */}
+                {/* Merged Header and Search Section */}
                 <div className="search-section">
                     <div className="search-form-section">
+                        <div className="form-header">
+                            <h1 className="page-title">Search & Vote on Proposals</h1>
+                            <p className="page-subtitle">Find and participate in active proposals</p>
+                        </div>
                         <div className="search-form-group">
                             <label className="form-label" htmlFor="proposalId">
                                 Proposal ID <span className="required">*</span>
@@ -540,9 +492,7 @@ const ProposalSearch = () => {
                                     value={proposalId}
                                     onChange={(e) => {
                                         const newValue = e.target.value;
-                                        console.log('Input onChange - new value:', newValue);
                                         setProposalId(newValue);
-                                        console.log('ProposalId state should now be:', newValue);
                                         // Clear any existing errors when user types
                                         if (error) setError('');
                                     }}

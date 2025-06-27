@@ -601,8 +601,10 @@ header .logo img {
 .submit-section .button-group .submit-btn,
 .submit-section .button-group .cancel-btn {
 	flex: 1;
-	min-width: 200px;
-	max-width: 280px;
+	min-width: 160px;
+	max-width: 220px;
+	padding: var(--spacing-lg) var(--spacing-xl);
+	font-size: var(--text-base);
 }
 
 .submit-btn {
@@ -909,14 +911,18 @@ header .logo img {
 	}
 
 	.button-group {
-		flex-direction: column-reverse;
 		gap: var(--spacing-sm);
+		max-width: 100%;
 	}
 
 	.button-group .submit-btn,
 	.button-group .cancel-btn {
-		width: 100%;
+		flex: 1;
+		min-width: 120px;
 		max-width: none;
+		padding: var(--spacing-sm) var(--spacing-md);
+		height: 42px;
+		font-size: var(--text-xs);
 	}
 
 	.navdefault ul {
@@ -945,6 +951,19 @@ header .logo img {
 	.remove-option-btn {
 		width: 28px;
 		height: 28px;
+	}
+
+	.button-group {
+		gap: var(--spacing-xs);
+	}
+
+	.button-group .submit-btn,
+	.button-group .cancel-btn {
+		flex: 1;
+		min-width: 100px;
+		padding: var(--spacing-xs) var(--spacing-sm);
+		height: 38px;
+		font-size: var(--text-xs);
 	}
 }
 
