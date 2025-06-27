@@ -1,0 +1,625 @@
+/* ================================
+   MODERN HEADER STYLES
+   ================================ */
+
+header {
+	position: fixed;
+	top: 0;
+	left: 0;
+	padding: 0 20px 0 100px;
+	width: 100%;
+	box-sizing: border-box;
+	z-index: 1000;
+	transition: 0.5s;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	background-color: rgba(1, 4, 25, 0.8);
+}
+
+nav {
+	display: flex;
+	align-items: center;
+	height: 100%;
+}
+
+header .logo-ab {
+	height: 50px;
+	font-size: 40px;
+	float: left;
+}
+
+header .arrow-ab {
+	height: 40px;
+	width: 50px;
+	line-height: 50px;
+	padding: 0 5px;
+	padding-top: 7px;
+	display: block;
+	font-size: 20px;
+	float: left;
+}
+
+header .arrow-ab:hover {
+	transform: scale(1.1);
+}
+
+header nav ul {
+	padding: 0;
+	margin: 0;
+	display: flex;
+	transition: 0.5s;
+}
+
+header nav ul li {
+	list-style: none;
+	transition: 0.5s;
+}
+
+header nav ul li a {
+	text-decoration: none;
+	height: 50px;
+	line-height: 50px;
+	padding: 0 20px;
+	color: #fff;
+	display: block;
+	transition: 0.5s;
+}
+
+header nav ul li a img {
+	height: 40px;
+	line-height: 50px;
+	padding: 0 5px;
+	padding-top: 7px;
+	color: #fff;
+	display: block;
+}
+
+header nav ul li a.active,
+header nav ul li a:hover {
+	color: #00FFFF;
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	background-color: transparent;
+	font-size: 15px;
+	transition: 0.5s;
+	border-radius: 8px;
+}
+
+.act-ab {
+	border: 1px solid rgba(255, 255, 255, 0.4);
+	border-radius: 8px;
+}
+
+header .menu-toggle-ab {
+	float: right;
+	line-height: 50px;
+	font-size: 24px;
+	cursor: pointer;
+	display: none;
+}
+
+.toggle {
+	display: none;
+	height: 25px;
+	width: 25px;
+}
+
+/* ================================
+   ABOUT PAGE MAIN STYLES
+   ================================ */
+
+.about-page-container {
+	min-height: 100vh;
+	background: var(--gradient-bg);
+	padding-top: 70px;
+}
+
+/* Landing Section */
+.landing-img-ab {
+	width: 100%;
+	height: 80vh;
+	position: absolute;
+	background-image: url(/public/assets/images/aboutback1.jpg);
+	background-size: cover;
+	background-repeat: no-repeat;
+	background-position: top;
+	background-attachment: fixed;
+}
+
+.layer-ab {
+	position: relative;
+	width: 100%;
+	height: 80vh;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+	flex-wrap: wrap;
+}
+
+.landing-info-ab {
+	width: 40%;
+	height: auto;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin-top: 130px;
+}
+
+.landing-info2 {
+	width: 60%;
+}
+
+.large-heading-ab {
+	font-family: "Kanit", sans-serif;
+	font-weight: 500;
+	font-weight: 200;
+	font-size: 60px;
+	color: aliceblue;
+	text-align: center;
+}
+
+.para {
+	margin-top: 60px;
+	font-size: 13px;
+}
+
+/* Search Section */
+.searchDiv {
+	position: relative;
+	width: 100%;
+	height: 0vh;
+	display: flex;
+	margin-top: 50px;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+	flex-wrap: wrap;
+}
+
+.search-bar {
+	width: 70%;
+	padding: 10px;
+	font-size: 16px;
+	border: 1px solid black;
+	border-radius: 5px;
+	margin-top: 95px;
+	position: relative;
+}
+
+.search_icon {
+	position: absolute;
+	margin-top: 230px;
+	left: 480px;
+	width: 25px;
+	height: 25px;
+}
+
+/* ================================
+   CONTENT SECTIONS
+   ================================ */
+
+.aboutPart-ab {
+	width: 100%;
+	height: auto;
+	background-color: white;
+	display: flex;
+	justify-content: center;
+}
+
+.about-ab {
+	width: 850px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	text-align: left;
+}
+
+.about-divs-ab {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-wrap: wrap;
+	height: auto;
+	padding: 70px 0;
+}
+
+.about-header-ab {
+	color: black;
+	margin-bottom: 50px;
+	margin-left: 350px;
+	font-size: 30px;
+	font-weight: 600;
+	font-family: 'Times New Roman', Times, serif;
+	line-height: 60px;
+}
+
+.para2-ab {
+	margin-right: 100px;
+	font-size: 20px;
+	color: black;
+}
+
+.about-img {
+	width: 350px;
+	height: 300px;
+	border-radius: 30px;
+}
+
+.WhatDoPart {
+	width: 100%;
+	height: auto;
+	background-color: #00113F;
+	display: flex;
+	justify-content: center;
+}
+
+.WhatDo {
+	width: 900px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+}
+
+.WhatDo-divs {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-wrap: wrap;
+	height: auto;
+	padding: 70px 0;
+}
+
+.WhatDo-header {
+	color: white;
+	margin-bottom: 50px;
+	font-size: 30px;
+	font-weight: 600;
+	font-family: 'Times New Roman', Times, serif;
+	line-height: 60px;
+}
+
+.WhatDopara {
+	font-size: 25px;
+	color: white;
+}
+
+.WhyUsPart {
+	width: 100%;
+	height: auto;
+	background-color: white;
+	display: flex;
+	justify-content: center;
+}
+
+.WhyUs {
+	width: 850px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	text-align: left;
+}
+
+.WhyUs-divs {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-wrap: wrap;
+	height: auto;
+	padding: 70px 0;
+}
+
+.WhyUs-header {
+	color: #00113F;
+	margin-bottom: 250px;
+	margin-left: 350px;
+	font-size: 30px;
+	font-weight: 600;
+	font-family: 'Times New Roman', Times, serif;
+	line-height: 60px;
+}
+
+.WhyUslists {
+	position: absolute;
+	margin-top: 70px;
+	margin-right: 100px;
+	font-size: 20px;
+	color: black;
+}
+
+ul {
+	list-style: circle;
+}
+
+.WhyUs-img {
+	width: 450px;
+	height: 300px;
+	border-radius: 30px;
+}
+
+.learnMore {
+	margin-top: 15px;
+	padding: 10px;
+	width: 15%;
+	background-color: #0cc;
+	color: black;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 16px;
+}
+
+.learnMore:hover {
+	background-color: transparent;
+	color: rgb(19, 138, 144);
+	border: 1px solid rgba(19, 138, 144);
+}
+
+.votePart {
+	position: relative;
+	width: 100%;
+	height: auto;
+	background-color: white;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	padding: 15px 0;
+	z-index: 1;
+}
+
+.vote {
+	width: 850px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	text-align: left;
+	padding-left: 50px;
+	margin-right: 20px;
+}
+
+.vote-divs {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-wrap: wrap;
+	height: auto;
+	padding: 70px 0;
+}
+
+.para3 {
+	margin-top: 130px;
+	margin-right: 50px;
+	font-size: 40px;
+	font-weight: 600;
+	color: white;
+}
+
+.vote-img {
+	width: 300px;
+	height: 300px;
+}
+
+.voteBackground {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-size: cover;
+	z-index: -1;
+}
+
+.availableVotes {
+	margin-top: 15px;
+	margin-left: 10px;
+	padding: 10px;
+	width: 25%;
+	background-color: #0cc;
+	color: black;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 16px;
+}
+
+.availableVotes:hover {
+	transform: scale(1.1);
+}
+
+/* ================================
+   FLOATING ACTION BUTTON
+   ================================ */
+
+.btn-ab {
+	position: fixed;
+	bottom: 20px;
+	left: 20px;
+	width: 44px;
+	height: 42px;
+	background-color: navajowhite;
+	border-radius: 50%;
+	box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+	cursor: pointer;
+	transition: background-color 0.1s, transform 0.1s;
+	border: none;
+	display: none;
+	align-items: center;
+	justify-content: center;
+	z-index: 100;
+}
+
+.btn-ab svg {
+	width: 24px;
+	height: 24px;
+	fill: black;
+}
+
+.btn-ab:hover {
+	background-color: navajowhite;
+	transform: scale(1.1);
+}
+
+/* ================================
+   RESPONSIVE STYLES
+   ================================ */
+
+@media (max-width: 800px) {
+	header {
+		padding: 0 20px;
+		transition: 0.5s;
+		height: auto;
+	}
+
+	.menu-toggle-ab {
+		display: block;
+		transition: 0.5s;
+	}
+
+	.toggle {
+		display: block;
+		transition: 0.5s;
+	}
+
+	header nav {
+		position: absolute;
+		width: 100%;
+		height: calc(100vh - 350px);
+		background: rgb(22, 22, 22);
+		top: 50px;
+		left: -100%;
+		transition: 0.5s;
+		flex-direction: column;
+		justify-content: flex-start;
+	}
+
+	header nav.active {
+		left: 0;
+		transition: 0.5s;
+	}
+
+	header nav ul {
+		display: block;
+		text-align: center;
+		transition: 0.5s;
+		margin-top: 50px;
+		margin-bottom: 50px;
+	}
+
+	header .menu-toggle-ab {
+		display: block;
+		transition: 0.5s;
+	}
+
+	.toggle {
+		display: block;
+		transition: 0.5s;
+	}
+
+	header nav ul a {
+		border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+		transition: 0.5s;
+		font-size: 18px;
+	}
+
+	.dropdown .dropbtn {
+		font-size: 18px;
+	}
+
+	.dropdown-content {
+		width: 100%;
+	}
+
+	.dropdown-content a {
+		text-align: center;
+		font-size: 18px;
+	}
+}
+
+/* ================================
+   LEGACY DROPDOWN STYLES (COMPATIBILITY)
+   ================================ */
+
+.drop {
+	width: 100%;
+	background-color: transparent;
+}
+
+.dropdown {
+	overflow: hidden;
+	height: 50px;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.dropdown .dropbtn {
+	font-size: 16px;
+	border: none;
+	outline: none;
+	color: #fff;
+	background-color: inherit;
+	width: 100%;
+}
+
+.navbar a:hover,
+.dropdown:hover .dropbtn {
+	background-color: #2196f3;
+	transition: 0.5s;
+}
+
+.dropdown-content {
+	display: none;
+	position: absolute;
+	background-color: #2196f3;
+	box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+	z-index: 1;
+	transition: 0.5s;
+	width: 132px;
+}
+
+.dropdown-content a {
+	float: none;
+	color: #fff;
+	padding: 0;
+	text-decoration: none;
+	display: block;
+	text-align: center;
+	transition: 0.5s;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.dropdown-content a:hover {
+	background-color: #0f1a36;
+	width: 100%;
+}
+
+.dropdown:hover .dropdown-content {
+	display: block;
+}
+
+/* Utility classes for consistent spacing and layout */
+.info {
+	display: flex;
+	align-items: center;
+}
+
+.copyrights {
+	padding: 20px 0;
+	font-size: 15px;
+	text-align: center;
+}
+
+.votes {
+	margin-top: 50px;
+	width: 60vw;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}

@@ -1,0 +1,129 @@
+/* Main Container */
+.welcome-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100vh;
+    padding: 0 7%;
+    background-image: url('/public/assets/images/welcome-background.jpg'); /* Change to your image path */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Text Section - Now on Left */
+.text-container {
+    max-width: 65%;
+    text-align: left;
+}
+
+.title-wel {
+    font-size: 5rem;
+    font-weight: bold;
+    color: white;
+    line-height: 1.2;
+}
+
+.subtitle {
+    font-size: 2rem;
+    font-weight: bold;
+    color: white;
+    line-height: 1.2;
+}
+
+.highlight-developer {
+    color: #FF1493;
+}
+
+.highlight-teams {
+    color: aqua;
+}
+
+.highlight-businesses {
+    color: #FFD700;
+}
+
+/* Button Section - Now on Right */
+.button-container {
+    display: flex;
+    gap: 1rem; /* Space between buttons */
+}
+
+/* Button Styling */
+.action-button {
+    background-color: rgba(19, 138, 144);
+    color: aliceblue;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Times New Roman', Times, serif;
+    padding: 1rem 1.6rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+    text-align: center;
+}
+
+/* Hover Effect: Swap Background and Text Color */
+.action-button:hover {
+    border: 1px solid #0f99a0;
+    background-color: transparent;
+    transform: scale(1.05);
+}
+
+.action-button-login{
+    background-color: transparent;
+    color: aliceblue;
+    border: 1px solid #0f99a0;
+    border-radius: 8px;
+    padding: 1rem 2rem;
+    font-family: 'Times New Roman', Times, serif;
+    font-weight: bold;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+    text-align: center;
+}
+
+.action-button-login:hover {
+    background-color: rgba(19, 138, 144);
+    transform: scale(1.05);
+}
+
+/* ThirdWeb Connect Button Styling */
+.button-container [data-theme] {
+    background-color: transparent !important;
+    color: aliceblue !important;
+    border: 1px solid #0f99a0 !important;
+    border-radius: 8px !important;
+    padding: 1rem 2rem !important;
+    font-family: 'Times New Roman', Times, serif !important;
+    font-weight: bold !important;
+    font-size: 1.2rem !important;
+    cursor: pointer !important;
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease !important;
+    text-align: center !important;
+}
+
+.button-container [data-theme]:hover {
+    background-color: rgba(19, 138, 144) !important;
+    transform: scale(1.05) !important;
+}
+
+/* Navigation Connect Button Styling */
+nav [data-theme] {
+    background-color: #0f99a0 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 0.9rem !important;
+    cursor: pointer !important;
+    height: auto !important;
+    min-height: auto !important;
+}
+
+nav [data-theme]:hover {
+    background-color: #138a90 !important;
+    transform: scale(1.05) !important;
+}
