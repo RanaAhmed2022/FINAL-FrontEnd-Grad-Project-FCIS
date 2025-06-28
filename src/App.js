@@ -6,6 +6,7 @@ import Home from './components/Home/Home'
 import About from './components/About/About'
 import Addnewvote from './components/Addnewvote/Addnewvote'
 import ProposalSearch from './components/ProposalSearch/ProposalSearch'
+import VotesHistory from './components/VotesHistory/VotesHistory'
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 
 import { ThirdwebProvider } from "thirdweb/react";
@@ -36,6 +37,11 @@ function App() {
         <Route path="/search-proposals" element={
           <ProtectedRoute>
             <ProposalSearch />
+          </ProtectedRoute>
+        } />
+        <Route path="/voteshistory" element={
+          <ProtectedRoute>
+            <VotesHistory />
           </ProtectedRoute>
         } />
         {/* Add more routes as you convert other components */}

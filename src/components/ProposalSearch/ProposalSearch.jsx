@@ -18,6 +18,10 @@ const ProposalSearch = () => {
     const [userVote, setUserVote] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showCopyToast, setShowCopyToast] = useState(false);
+    const [proposalFinalized, setProposalFinalized] = useState(true);
+    const [voteCounts, setVoteCounts] = useState({});
+    const [totalVotes, setTotalVotes] = useState(0);
+    const [loadingCounts, setLoadingCounts] = useState(false);
 
     // Check if we received a proposal ID from navigation
     useEffect(() => {
@@ -57,6 +61,41 @@ const ProposalSearch = () => {
 
     const goBack = () => navigate(-1);
 
+    const fetchVoteCounts = async (proposalId, options, accountAddress) => {
+        setLoadingCounts(true);
+        setVoteCounts({});
+        setTotalVotes(0);
+
+        try {
+            const counts = {};
+            let total = 0;
+
+            for (const option of options) {
+                try {
+                    const count = await readContract({
+                        contract,
+                        method: CONTRACT_FUNCTIONS.GET_VOTE_COUNT,
+                        params: [proposalId, option],
+                        from: accountAddress
+                    });
+                    const voteCount = Number(count);
+                    counts[option] = voteCount;
+                    total += voteCount;
+                } catch (err) {
+                    console.error(`Error getting vote count for option "${option}":`, err);
+                    counts[option] = 0;
+                }
+            }
+
+            setVoteCounts(counts);
+            setTotalVotes(total);
+        } catch (err) {
+            console.error('Error fetching vote counts:', err);
+        } finally {
+            setLoadingCounts(false);
+        }
+    };
+
     const searchProposal = async (idToSearch = null) => {
         // If it's an event object (button click), ignore it and use state
         // If it's a direct value, use that value
@@ -95,6 +134,9 @@ const ProposalSearch = () => {
         setProposal(null);
         setUserVote('');
         setSelectedOption('');
+        setVoteCounts({});
+        setTotalVotes(0);
+        setLoadingCounts(false);
 
         try {
             // Check if we have a valid address
@@ -200,7 +242,23 @@ const ProposalSearch = () => {
                 // Error getting user vote - this is non-critical
             }
 
-            setProposal({
+            // Check if proposal is finalized using contract function
+            let isFinalized = true;
+            // try {
+            //     isFinalized = await readContract({
+            //         contract,
+            //         method: CONTRACT_FUNCTIONS.IS_PROPOSAL_FINALIZED,
+            //         params: [searchId],
+            //         from: accountAddress
+            //     });
+            // } catch (finalizedCheckError) {
+            //     // If we can't check finalization status, fallback to status check
+            //     isFinalized = Number(proposalDetails[5]) === 4;
+            // }
+            
+            setProposalFinalized(isFinalized);
+
+            const proposalData = {
                 owner: proposalDetails[0],
                 title: proposalDetails[1],
                 options: proposalDetails[2],
@@ -210,7 +268,14 @@ const ProposalSearch = () => {
                 voteMutability: Number(proposalDetails[6]),
                 winners: proposalDetails[7],
                 isDraw: proposalDetails[8]
-            });
+            };
+
+            setProposal(proposalData);
+
+            // If proposal is finalized, fetch vote counts
+            if (isFinalized) {
+                fetchVoteCounts(searchId, proposalDetails[2], accountAddress);
+            }
             
             setUserVote(currentVote);
             if (currentVote) {
@@ -609,17 +674,20 @@ const ProposalSearch = () => {
                                 </div>
                             </div>
 
-                            {/* Results Section (if finalized) */}
-                            {proposal.status === 4 && proposal.winners.length > 0 && (
-                                <div className="results-section">
-                                    <h3>📊 Final Results</h3>
+                            {/* Results Summary (if finalized) */}
+                            {proposalFinalized && (
+                                <div className="results-summary">
+                                    <h3>Final Results</h3>
                                     {proposal.isDraw ? (
                                         <div className="draw-message">
-                                            🤝 The vote ended in a draw!
+                                            🤝 The vote ended in a draw! Total votes: <strong>{totalVotes}</strong>
                                         </div>
                                     ) : (
                                         <div className="winners-display">
-                                            <strong>🎉 Winner(s):</strong> {proposal.winners.join(', ')}
+                                            <strong>🎉 Winner(s):</strong> {proposal.winners.map(winner => {
+                                                const winnerVotes = voteCounts[winner] || 0;
+                                                return `${winner}, with votes ${winnerVotes} out of ${totalVotes}`;
+                                            }).join(' | ')}
                                         </div>
                                     )}
                                 </div>
@@ -651,23 +719,58 @@ const ProposalSearch = () => {
                                 )}
 
                                 <div className="options-grid">
-                                    {proposal.options.map((option, index) => (
-                                        <label key={index} className={`option-card ${selectedOption === option ? 'selected' : ''} ${!canVote() || (userVote && !isMutable()) ? 'disabled' : ''}`}>
-                                            <input
-                                                type="radio"
-                                                name="vote-option"
-                                                value={option}
-                                                checked={selectedOption === option}
-                                                onChange={(e) => setSelectedOption(e.target.value)}
-                                                disabled={!canVote() || (userVote && !isMutable())}
-                                                className="radio-input"
-                                            />
-                                            <div className="option-content">
-                                                <span className="option-text">{option}</span>
-                                                {selectedOption === option && <span className="check-icon">✓</span>}
-                                            </div>
-                                        </label>
-                                    ))}
+                                    {proposal.options.map((option, index) => {
+                                        const voteCount = voteCounts[option] || 0;
+                                        const percentage = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+                                        const isWinner = proposal.winners && proposal.winners.includes(option);
+                                        
+                                        return (
+                                            <label key={index} className={`option-card ${selectedOption === option ? 'selected' : ''} ${!canVote() || (userVote && !isMutable()) ? 'disabled' : ''} ${proposalFinalized && isWinner ? 'winner' : ''}`}>
+                                                <input
+                                                    type="radio"
+                                                    name="vote-option"
+                                                    value={option}
+                                                    checked={selectedOption === option}
+                                                    onChange={(e) => setSelectedOption(e.target.value)}
+                                                    disabled={!canVote() || (userVote && !isMutable())}
+                                                    className="radio-input"
+                                                />
+                                                <div className="option-content">
+                                                    <div className="option-header">
+                                                        <span className="option-text">{option}</span>
+                                                        {proposalFinalized && isWinner && <span className="winner-crown">👑</span>}
+                                                        {selectedOption === option && <span className="check-icon">✓</span>}
+                                                    </div>
+                                                    
+                                                    {/* Vote count display for finalized proposals */}
+                                                    {proposalFinalized && (
+                                                        <div className="vote-results-inline">
+                                                            {loadingCounts ? (
+                                                                <div className="loading-votes">Loading...</div>
+                                                            ) : (
+                                                                <>
+                                                                    <div className="vote-stats">
+                                                                        <span className="vote-count">{voteCount} votes</span>
+                                                                        <span className="vote-percentage">({percentage}%)</span>
+                                                                    </div>
+                                                                    <div className="progress-bar-container">
+                                                                        <div 
+                                                                            className={`progress-bar ${isWinner ? 'winner-bar' : ''}`}
+                                                                            style={{ width: `${percentage}%` }}
+                                                                        >
+                                                                            {percentage > 20 && (
+                                                                                <span className="progress-text">{percentage}%</span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </label>
+                                        );
+                                    })}
                                 </div>
 
                                 {/* Action Buttons */}

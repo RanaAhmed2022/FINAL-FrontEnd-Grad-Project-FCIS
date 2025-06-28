@@ -47,7 +47,6 @@ const Welcome = () => {
     useEffect(() => {
         const checkVerificationStatus = async () => {
             if (account?.address && !isVerifying && !showFaceVerification && !hasCheckedVerification) {
-                console.log('Checking verification for address:', account.address);
                 setIsVerifying(true);
                 setLoading(true);
                 setVerificationError('');
@@ -58,21 +57,17 @@ const Welcome = () => {
                     sessionStorage.setItem('wallet-connected', 'true');
                     sessionStorage.setItem('wallet-address', account.address);
                     
-                    // Check if user is verified in the smart contract immediately
-                    console.log('Starting verification check...');
+                    // Check if user is verified in the smart contract
                     const isVerified = await isVoterVerified(account.address);
-                    console.log('Verification result:', isVerified);
                     
                     if (isVerified) {
-                        // User is verified - show face verification immediately
-                        console.log('User verified, showing face verification immediately');
+                        // User is verified - show face verification
                         setIsVerifying(false);
                         setLoading(false);
                         setShowFaceVerification(true);
-                        return; // Exit early to prevent any navigation
+                        return;
                     } else {
                         // User is not verified - redirect to registration
-                        console.log('User not verified, redirecting to registration');
                         setIsVerifying(false);
                         setLoading(false);
                         navigate('/registration');
@@ -87,11 +82,10 @@ const Welcome = () => {
             }
         };
 
-        // Only run if we have an account and haven't already checked
         if (account?.address && !hasCheckedVerification && !isVerifying) {
             checkVerificationStatus();
         }
-    }, [account?.address, hasCheckedVerification, isVerifying, navigate]); // Include all state dependencies
+    }, [account?.address, hasCheckedVerification, isVerifying, navigate]);
 
     const handleFaceVerificationComplete = () => {
         setShowFaceVerification(false);

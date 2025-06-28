@@ -52,13 +52,15 @@ export const CONTRACT_FUNCTIONS = {
     GET_VOTER_SELECTED_OPTION: "function getVoterSelectedOption(uint256 proposalId) external view returns (string memory)",
     GET_PROPOSAL_COUNT: "function getProposalCount() external view returns (uint256)",
     GET_VOTE_COUNT: "function getVoteCount(uint256 proposalId, string memory option) external view returns (uint256)",
-    REGISTER_VOTER: "function registerVoter(address voter, uint64 nid, int256[] memory embeddings) external",
-    IS_NID_REGISTERED: "function isNidRegistered(uint64 nid) external view returns (bool)",
+    REGISTER_VOTER: "function registerVoter(address voter, bytes32 nid, int256[] memory embeddings) external",
+    IS_NID_REGISTERED: "function isNidRegistered(bytes32 nid) external view returns (bool)",
     GET_VOTER_PARTICIPATED_PROPOSALS: "function getVoterParticipatedProposals() external view returns (uint256[] memory)",
     GET_VOTER_CREATED_PROPOSALS: "function getVoterCreatedProposals() external view returns (uint256[] memory)",
     UPDATE_PROPOSAL_STATUS: "function updateProposalStatus(uint256 proposalId) external",
     IS_PROPOSAL_FINALIZED: "function isProposalFinalized(uint256 proposalId) external view returns (bool)",
     GET_VOTER_EMBEDDINGS: "function getVoterEmbeddings() external view returns (int256[] memory)",
     IS_PROPOSAL_EXISTS: "function isProposalExists(uint256 proposalId) external view returns (bool)",
-    IS_VOTER_VERIFIED: "function isVoterVerified(address voter) external view returns (bool)"
+    VERIFY_VOTER: "function verifyVoter(address voter) external",
+    IS_VOTER_VERIFIED: "function isVoterVerified(address voter) external view returns (bool)",
+    REMOVE_USER_PROPOSAL: "function removeProposal(uint256 proposalId) external"
 }; 

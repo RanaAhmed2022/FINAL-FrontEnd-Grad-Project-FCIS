@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useVotingContract } from '../../hooks/useVotingContract';
+import { useFaceVerification } from '../../hooks/useFaceVerification';
 import './FaceVerification.css';
 
 const FaceVerification = ({ userAddress, onComplete }) => {
@@ -15,40 +16,78 @@ const FaceVerification = ({ userAddress, onComplete }) => {
     const canvasRef = useRef(null);
     const navigate = useNavigate();
     const { getVoterEmbeddings } = useVotingContract();
+    
+    // Face verification hook
+    const { 
+        processLogin, 
+        isLoading: faceLoading, 
+        error: faceError, 
+        clearError,
+        checkApiStatus 
+    } = useFaceVerification();
+
+    // Convert data URL to File object
+    const dataURLtoFile = (dataURL, filename) => {
+        const arr = dataURL.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new File([u8arr], filename, { type: mime });
+    };
+
+    // Verify embeddings are properly scaled (should be float values, not large integers)
+    const verifyEmbeddingsScaled = (embeddings) => {
+        if (!embeddings || embeddings.length === 0) return false;
+        
+        // Check if values are in expected float range (typically -1 to 1 for face embeddings)
+        const isProperlyScaled = embeddings.every(value => 
+            typeof value === 'number' && Math.abs(value) <= 10
+        );
+        
+        if (!isProperlyScaled) {
+            console.warn('⚠️ Warning: Embeddings may not be properly scaled down!');
+            console.warn('Expected: float values between -10 and 10');
+            console.warn('Actual sample values:', embeddings.slice(0, 5));
+            return false;
+        }
+        
+        console.log('✅ Embeddings scale verification passed - values are in expected float range');
+        return true;
+    };
 
     // Get voter embeddings when component mounts
     useEffect(() => {
         const fetchEmbeddings = async () => {
-            console.log('Fetching voter embeddings...');
             try {
                 setLoading(true);
                 setError('');
                 
-                // Add timeout to prevent hanging
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout: Failed to fetch embeddings')), 10000)
-                );
+                const embeddings = await getVoterEmbeddings();
                 
-                const embeddingsPromise = getVoterEmbeddings();
-                const embeddings = await Promise.race([embeddingsPromise, timeoutPromise]);
+                // Scale down embeddings from blockchain (they were scaled by 1e18)
+                const scaledDownEmbeddings = embeddings.map(value => Number(value) / 1e18);
                 
-                console.log('Voter embeddings fetched:', embeddings);
-                setVoterEmbeddings(embeddings);
+                // Verify the scaling was successful
+                verifyEmbeddingsScaled(scaledDownEmbeddings);
+                
+                setVoterEmbeddings(scaledDownEmbeddings);
             } catch (err) {
                 console.error('Error fetching embeddings:', err);
                 setError('Failed to get voter embeddings. You can still proceed with face verification.');
-                // Don't block the user, allow them to continue
                 setVoterEmbeddings([]);
             } finally {
                 setLoading(false);
             }
         };
 
-        // Only fetch once when component mounts
         if (userAddress && !voterEmbeddings && !loading) {
             fetchEmbeddings();
         }
-    }, [userAddress]); // Only depend on userAddress
+    }, [userAddress]);
 
     // Function to stop camera stream
     const stopCamera = () => {
@@ -200,48 +239,53 @@ const FaceVerification = ({ userAddress, onComplete }) => {
             return;
         }
 
+        if (!voterEmbeddings || voterEmbeddings.length === 0) {
+            setError('No stored face data found. Please contact support or re-register.');
+            return;
+        }
+
         setLoading(true);
         setError('');
+        clearError();
 
         try {
-            // Here we would normally send the captured image and voter embeddings to AI API
-            // For now, we'll simulate the process and then redirect to home
+            // Convert captured image to File object for face verification API
+            const imageFile = dataURLtoFile(capturedImage, 'verification-photo.png');
             
-            // TODO: Implement AI comparison API call
-            // const response = await fetch('/api/verify-face', {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //     },
-            //     body: JSON.stringify({
-            //         userAddress,
-            //         capturedImage,
-            //         voterEmbeddings
-            //     }),
-            // });
-            
-            // For now, just simulate success after a short delay
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // Store verification status
-            sessionStorage.setItem('face-verified', 'true');
-            
-            // Call completion callback
-            if (onComplete) {
-                onComplete();
+            // Final verification before sending to API
+            const areEmbeddingsScaled = verifyEmbeddingsScaled(voterEmbeddings);
+            if (!areEmbeddingsScaled) {
+                console.error('❌ Embeddings verification failed - aborting verification');
+                setError('Embeddings are not properly scaled. Please try again or contact support.');
+                return;
             }
             
-            // Navigate to home
-            navigate('/home');
+            const verificationPassed = await processLogin(imageFile, voterEmbeddings);
+            
+            if (verificationPassed) {
+                console.log('Face verification successful!');
+                
+                // Store verification status
+                sessionStorage.setItem('face-verified', 'true');
+                
+                // Call completion callback
+                if (onComplete) {
+                    onComplete();
+                }
+                
+                // Navigate to home
+                navigate('/home');
+            } else {
+                setError('Face verification failed. The captured photo does not match your registered face. Please try again.');
+            }
             
         } catch (err) {
-            setError('Face verification failed. Please try again.');
+            console.error('Face verification error:', err);
+            setError(`Face verification failed: ${err.message || 'Unknown error occurred'}`);
         } finally {
             setLoading(false);
         }
     };
-
-
 
     if (loading && !capturedImage && !error) {
         return (
@@ -280,7 +324,11 @@ const FaceVerification = ({ userAddress, onComplete }) => {
                 </div>
                 
                 <div className="verification-content">
-                    {error && <div className="error-message">{error}</div>}
+                    {(error || faceError) && (
+                        <div className="error-message">
+                            {error || faceError}
+                        </div>
+                    )}
                 
                 {!capturedImage ? (
                     <div className="capture-section">
@@ -290,7 +338,7 @@ const FaceVerification = ({ userAddress, onComplete }) => {
                         <button 
                             className="start-camera-btn" 
                             onClick={startCamera}
-                            disabled={loading}
+                            disabled={loading || faceLoading}
                         >
                             Start Camera
                         </button>
@@ -306,16 +354,16 @@ const FaceVerification = ({ userAddress, onComplete }) => {
                             <button 
                                 className="retake-btn" 
                                 onClick={retakePhoto}
-                                disabled={loading}
+                                disabled={loading || faceLoading}
                             >
                                 Retake Photo
                             </button>
                             <button 
                                 className="submit-btn" 
                                 onClick={handleSubmit}
-                                disabled={loading}
+                                disabled={loading || faceLoading}
                             >
-                                {loading ? 'Verifying...' : 'Submit & Continue'}
+                                {(loading || faceLoading) ? 'Verifying...' : 'Submit & Continue'}
                             </button>
                         </div>
                     </div>
