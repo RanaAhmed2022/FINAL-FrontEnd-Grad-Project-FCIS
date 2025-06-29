@@ -22,26 +22,24 @@ export default function AboutUs() {
 
     useEffect(() => {
         const handleScroll = () => {
-        const nav = navRef.current;
-        const btn = btnRef.current;
-        if (!nav || !btn) return;
+            const header = document.querySelector('header');
+            const btn = btnRef.current;
+            if (!btn || !header) return;
 
-        if (window.scrollY >= 250) {
-            nav.classList.remove("navdefault");
-            nav.classList.add("navscroll");
-            btn.style.display = "block";
-        } else {
-            nav.classList.add("navdefault");
-            nav.classList.remove("navscroll");
-            btn.style.display = "none";
-        }
+            if (window.scrollY >= 100) {
+                header.classList.add("navscroll");
+                btn.style.display = "block";
+            } else {
+                header.classList.remove("navscroll");
+                btn.style.display = "none";
+            }
         };
 
         window.addEventListener("scroll", handleScroll);
 
         // Cleanup
         return () => {
-        window.removeEventListener("scroll", handleScroll);
+            window.removeEventListener("scroll", handleScroll);
         };
     }, []);
 
@@ -53,38 +51,40 @@ export default function AboutUs() {
     return (
         <>
         <header>
-            <div className="logo-ab">
+            <div className="logo-container-ab">
                 <a onClick={goBack} style={{ cursor: "pointer" }}>
                     <img className="arrow-ab" src="./../../assets/images/arrow.png" title="Go one step back" alt="Back"/>
                 </a>
                 <Link to="/home">
-                    <img className="logo-ab" src="./../../assets/images/EV-Logo.png" alt="Logo"/>
+                    <img className="logo-ab" src="./../../assets/images/EV-Logo.png" alt="eVoting Logo"/>
                 </Link>
             </div>
 
             <div className="menu-toggle-ab" onClick={toggleMenu}>
-                <img src="./../../assets/images/menu-toggel.png"className="toggle" aria-hidden="true" alt="Menu toggle" />
+                <img src="./../../assets/images/menu-toggel.png" className="toggle" aria-hidden="true" alt="Menu toggle" />
             </div>
 
-            <nav ref={navRef} className={menuActive ? "active navdefault" : "navdefault"} >
-            <ul>
-                <li><Link to="/home">Home</Link></li>
-                <li><Link className="act-ab" to="/about">About Us</Link></li>
-                <li><Link to="/search-proposals">Search Proposals</Link></li>
-                <li><Link to="/addnewvote">Add New Vote</Link></li>
-                <li>
-                    <UserProfile />
-                </li>
-            </ul>
+            <nav ref={navRef} className={menuActive ? "active navdefault" : "navdefault"}>
+                <ul>
+                    <li><Link to="/home">Home</Link></li>
+                    <li><Link className="act-ab" to="/about">About Us</Link></li>
+                    <li><Link to="/search-proposals">Search Proposals</Link></li>
+                    <li><Link to="/addnewvote">Add New Vote</Link></li>
+                    <li>
+                        <UserProfile />
+                    </li>
+                </ul>
             </nav>
         </header>
 
         <section className="landing-img-ab">
             <div className="layer-ab">
             <div className="landing-info-ab">
-                <h1 className="large-heading-ab">Bulding Trust</h1>
-
+                <h1 className="large-heading-ab">Building Trust</h1>
                 <h2 className="large-heading2-ab">Through Innovation</h2>
+                <p className="para">
+                    Revolutionizing democracy with secure, transparent, and tamper-proof voting technology that ensures every voice is heard and every vote counts.
+                </p>
             </div>
             </div>
 
@@ -123,23 +123,17 @@ export default function AboutUs() {
             <div className="WhatDoPart">
             <div className="WhatDo-divs">
                 <div className="WhatDo">
-                <h1 className="WhatDo-header"> What We Do </h1>
+                <h1 className="WhatDo-header"> Our Solution </h1>
                 <p className="WhatDopara">
                     We've developed a Blockchain-Based E-Voting System that ensures
-                    every vote
-                    <br />
-                    is secure, anonymous, and immutable.
-                    <br />
+                    every vote is secure, anonymous, and immutable.
+                    <br /><br />
                     Our platform combines the power of blockchain to store
-                    unchangeable
-                    <br />
-                    records with AI-powered facial recognition to verify voter
-                    identity — all while
-                    <br />
-                    maintaining user privacy.
-                    <br />
+                    unchangeable records with AI-powered facial recognition to verify voter
+                    identity — all while maintaining user privacy.
+                    <br /><br />
                     We aim to provide a smooth and user-friendly voting experience
-                    for everyone.
+                    for everyone, making democracy more accessible and trustworthy.
                 </p>
                 </div>
             </div>
@@ -148,13 +142,13 @@ export default function AboutUs() {
             <div className="WhyUsPart">
                 <div className="WhyUs-divs">
                     <div className="WhyUs">
-                        <h1 className="WhyUs-header"> Why Choose Us </h1>
+                        <h1 className="WhyUs-header"> Key Features </h1>
                         <ul className="WhyUslists">
-                            <li>Tamper-Proof Voting: Votes are securely stored on a decentralized blockchain.</li>
-                            <li>AI Authentication: Facial recognition ensures only verified users can vote.</li>
-                            <li>User-Friendly Interface: Designed for ease of use and accessibility.</li>
-                            <li>Transparency Guaranteed: Every vote can be traced and verified (without revealing identity).</li>
-                            <li>Option to Update Vote: Voters can securely change their choice before the deadline.</li>
+                            <li><strong>Tamper-Proof Voting:</strong> Votes are securely stored on a decentralized blockchain, ensuring immutable records.</li>
+                            <li><strong>AI Authentication:</strong> Facial recognition ensures only verified users can vote while maintaining privacy.</li>
+                            <li><strong>User-Friendly Interface:</strong> Designed for ease of use and accessibility across all devices.</li>
+                            <li><strong>Transparency Guaranteed:</strong> Every vote can be traced and verified without revealing voter identity.</li>
+                            <li><strong>Flexible Voting:</strong> Voters can securely update their choice before the voting deadline.</li>
                         </ul>
                     </div>
                     <img src="./../../assets/images/aboutWhyUs.jpg" className="WhyUs-img" alt="Why Choose Us" />

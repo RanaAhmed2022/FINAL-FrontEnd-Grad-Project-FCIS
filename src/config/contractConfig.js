@@ -3,7 +3,7 @@ import { client } from "../thirdwebConfig";
 import { zkSyncSepoliaWithPaymaster } from "./paymasterConfig";
 
 // VotingFacade contract address
-export const VOTING_FACADE_ADDRESS = "0xB9129bB20F52cF5f728f477Edb875a9967FdC6Cd";
+export const VOTING_FACADE_ADDRESS = "0x080b2492B403758aDe9a249FDf245302C860BD63";
 
 // Contract configuration
 export const getVotingFacadeContract = () => {

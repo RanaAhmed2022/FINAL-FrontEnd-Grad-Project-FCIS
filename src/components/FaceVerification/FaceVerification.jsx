@@ -17,7 +17,6 @@ const FaceVerification = ({ userAddress, onComplete }) => {
     const navigate = useNavigate();
     const { getVoterEmbeddings } = useVotingContract();
     
-    // Face verification hook
     const { 
         processLogin, 
         isLoading: faceLoading, 
@@ -42,62 +41,40 @@ const FaceVerification = ({ userAddress, onComplete }) => {
     // Verify embeddings are properly scaled (should be float values, not large integers)
     const verifyEmbeddingsScaled = (embeddings) => {
         if (!embeddings || embeddings.length === 0) return false;
-        
-        // Check if values are in expected float range (typically -1 to 1 for face embeddings)
-        const isProperlyScaled = embeddings.every(value => 
+        return embeddings.every(value => 
             typeof value === 'number' && Math.abs(value) <= 10
         );
-        
-        if (!isProperlyScaled) {
-            console.warn('⚠️ Warning: Embeddings may not be properly scaled down!');
-            console.warn('Expected: float values between -10 and 10');
-            console.warn('Actual sample values:', embeddings.slice(0, 5));
-            return false;
-        }
-        
-        console.log('✅ Embeddings scale verification passed - values are in expected float range');
-        return true;
     };
 
     // Get voter embeddings when component mounts
     useEffect(() => {
         const fetchEmbeddings = async () => {
             try {
-                setLoading(true);
-                setError('');
-                
                 const embeddings = await getVoterEmbeddings();
                 
-                // Scale down embeddings from blockchain (they were scaled by 1e18)
-                const scaledDownEmbeddings = embeddings.map(value => Number(value) / 1e18);
-                
-                // Verify the scaling was successful
-                verifyEmbeddingsScaled(scaledDownEmbeddings);
-                
-                setVoterEmbeddings(scaledDownEmbeddings);
+                if (embeddings && embeddings.length > 0) {
+                    setVoterEmbeddings(embeddings);
+                } else {
+                    setError('No face data found. Please register first.');
+                }
             } catch (err) {
                 console.error('Error fetching embeddings:', err);
-                setError('Failed to get voter embeddings. You can still proceed with face verification.');
-                setVoterEmbeddings([]);
-            } finally {
-                setLoading(false);
+                setError('Failed to get voter embeddings. Please try again.');
             }
         };
 
-        if (userAddress && !voterEmbeddings && !loading) {
+        // Only fetch if we have an address and haven't fetched before
+        if (userAddress && voterEmbeddings === null) {
             fetchEmbeddings();
         }
-    }, [userAddress]);
+    }, [userAddress, getVoterEmbeddings, voterEmbeddings]);
 
     // Function to stop camera stream
     const stopCamera = () => {
         if (videoRef.current && videoRef.current.srcObject) {
             const stream = videoRef.current.srcObject;
             const tracks = stream.getTracks();
-            tracks.forEach(track => {
-                track.stop();
-                console.log('Camera track stopped:', track.kind);
-            });
+            tracks.forEach(track => track.stop());
             videoRef.current.srcObject = null;
         }
     };
@@ -109,7 +86,7 @@ const FaceVerification = ({ userAddress, onComplete }) => {
                 video: { 
                     width: 640, 
                     height: 480,
-                    facingMode: 'user' // Front camera
+                    facingMode: 'user'
                 } 
             })
                 .then(stream => {
@@ -137,7 +114,6 @@ const FaceVerification = ({ userAddress, onComplete }) => {
     }, []);
 
     const skipVerification = () => {
-        // Allow user to skip for now (accessible via CTRL+ALT+S)
         if (onComplete) {
             onComplete();
         }
@@ -149,15 +125,11 @@ const FaceVerification = ({ userAddress, onComplete }) => {
         const handleKeyDown = (event) => {
             if (event.ctrlKey && event.altKey && event.key === 's') {
                 event.preventDefault();
-                console.log('Skip verification shortcut activated (CTRL+ALT+S)');
                 skipVerification();
             }
         };
 
-        // Add event listener
         document.addEventListener('keydown', handleKeyDown);
-
-        // Cleanup event listener on unmount
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
         };
@@ -183,54 +155,20 @@ const FaceVerification = ({ userAddress, onComplete }) => {
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             const dataURL = canvas.toDataURL('image/png');
             setCapturedImage(dataURL);
-            
-            // Immediately stop camera after capture
-            if (video.srcObject) {
-                const stream = video.srcObject;
-                const tracks = stream.getTracks();
-                tracks.forEach(track => {
-                    track.stop();
-                    console.log('Camera track stopped after capture:', track.kind);
-                });
-                video.srcObject = null;
-            }
+            stopCamera();
             setShowCamera(false);
         }
     };
 
     const retakePhoto = () => {
-        // Stop any existing camera stream before retaking
-        if (videoRef.current && videoRef.current.srcObject) {
-            const stream = videoRef.current.srcObject;
-            const tracks = stream.getTracks();
-            tracks.forEach(track => {
-                track.stop();
-                console.log('Camera track stopped before retake:', track.kind);
-            });
-            videoRef.current.srcObject = null;
-        }
+        stopCamera();
         setCapturedImage(null);
         setShowCamera(true);
     };
 
     const closeCamera = () => {
-        // Immediately stop camera before state change
-        if (videoRef.current && videoRef.current.srcObject) {
-            const stream = videoRef.current.srcObject;
-            const tracks = stream.getTracks();
-            tracks.forEach(track => {
-                track.stop();
-                console.log('Camera track stopped immediately:', track.kind);
-            });
-            videoRef.current.srcObject = null;
-            
-            // Small delay to ensure browser processes the cleanup
-            setTimeout(() => {
-                setShowCamera(false);
-            }, 100);
-        } else {
-            setShowCamera(false);
-        }
+        stopCamera();
+        setShowCamera(false);
     };
 
     const handleSubmit = async () => {
@@ -249,31 +187,20 @@ const FaceVerification = ({ userAddress, onComplete }) => {
         clearError();
 
         try {
-            // Convert captured image to File object for face verification API
             const imageFile = dataURLtoFile(capturedImage, 'verification-photo.png');
             
-            // Final verification before sending to API
-            const areEmbeddingsScaled = verifyEmbeddingsScaled(voterEmbeddings);
-            if (!areEmbeddingsScaled) {
-                console.error('❌ Embeddings verification failed - aborting verification');
-                setError('Embeddings are not properly scaled. Please try again or contact support.');
+            if (!verifyEmbeddingsScaled(voterEmbeddings)) {
+                setError('Face data validation failed. Please try again or contact support.');
                 return;
             }
             
             const verificationPassed = await processLogin(imageFile, voterEmbeddings);
             
             if (verificationPassed) {
-                console.log('Face verification successful!');
-                
-                // Store verification status
                 sessionStorage.setItem('face-verified', 'true');
-                
-                // Call completion callback
                 if (onComplete) {
                     onComplete();
                 }
-                
-                // Navigate to home
                 navigate('/home');
             } else {
                 setError('Face verification failed. The captured photo does not match your registered face. Please try again.');

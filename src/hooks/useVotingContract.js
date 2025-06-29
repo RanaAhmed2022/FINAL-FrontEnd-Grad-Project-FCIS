@@ -432,7 +432,7 @@ export const useVotingContract = () => {
     };
 
     /**
-     * Get voter embeddings using raw ethers.js with proper signer context
+     * Get voter embeddings using thirdweb contract call
      */
     const getVoterEmbeddings = useCallback(async () => {
         if (!contract || !account?.address) {
@@ -440,36 +440,17 @@ export const useVotingContract = () => {
         }
 
         try {
-            // Use raw ethers.js with Web3Provider and signer for proper msg.sender context
-            if (typeof window !== 'undefined' && window.ethereum) {
-                const provider = new ethers.providers.Web3Provider(window.ethereum);
-                const signer = provider.getSigner();
-                const signerAddress = await signer.getAddress();
-                
-                if (signerAddress.toLowerCase() !== account.address.toLowerCase()) {
-                    throw new Error('Signer address mismatch');
-                }
-
-                // Minimal ABI for getVoterEmbeddings function
-                const contractABI = [
-                    "function getVoterEmbeddings() external view returns (int256[] memory)"
-                ];
-
-                const contractWithSigner = new ethers.Contract(
-                    VOTING_FACADE_ADDRESS,
-                    contractABI,
-                    signer
-                );
-
-                const result = await contractWithSigner.getVoterEmbeddings();
-                
-                // Convert BigNumber objects to regular numbers and divide by 1e18
-                const convertedEmbeddings = result.map(bigNum => Number(bigNum) / 1e18);
-                
-                return convertedEmbeddings;
-            } else {
-                throw new Error('Ethereum provider not available');
-            }
+            const embeddings = await readContract({
+                contract,
+                method: CONTRACT_FUNCTIONS.GET_VOTER_EMBEDDINGS,
+                params: [],
+                from: account.address // Explicitly specify the calling account
+            });
+            
+            // Convert BigNumber objects to regular numbers and divide by 1e18
+            const convertedEmbeddings = embeddings.map(bigNum => Number(bigNum) / 1e18);
+            return convertedEmbeddings;
+            
         } catch (error) {
             console.error('Error getting voter embeddings:', error);
             throw error;
