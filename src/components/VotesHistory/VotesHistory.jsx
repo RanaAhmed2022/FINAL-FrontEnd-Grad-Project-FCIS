@@ -90,14 +90,7 @@ const VotesHistory = () => {
             const createdProposalDetails = await Promise.all(
                 createdIds.map(async (id) => {
                     try {
-                        const details = await readContract({
-                            contract,
-                            method: CONTRACT_FUNCTIONS.GET_PROPOSAL_DETAILS,
-                            params: [id],
-                            from: accountAddress
-                        });
-
-                        // Check if proposal is finalized
+                        // Check if proposal is already finalized first
                         let isFinalized = false;
                         try {
                             isFinalized = await readContract({
@@ -107,8 +100,39 @@ const VotesHistory = () => {
                                 from: accountAddress
                             });
                         } catch (finalizedCheckError) {
-                            isFinalized = details[5] === 4;
+                            // If we can't check finalization, assume it's not finalized and try status update
+                            isFinalized = false;
                         }
+
+                        // Only update proposal status if not finalized
+                        if (!isFinalized) {
+                            try {
+                                const updateStatusTransaction = prepareContractCall({
+                                    contract,
+                                    method: CONTRACT_FUNCTIONS.UPDATE_PROPOSAL_STATUS,
+                                    params: [id]
+                                });
+
+                                const updateResult = await sendTransaction({
+                                    transaction: updateStatusTransaction,
+                                    account
+                                });
+                                
+                                // Wait for transaction confirmation
+                                await updateResult.wait();
+                                
+                            } catch (statusUpdateError) {
+                                // Don't throw error - status update is optional but we should try
+                                console.warn(`Status update failed for proposal ${id}:`, statusUpdateError);
+                            }
+                        }
+
+                        const details = await readContract({
+                            contract,
+                            method: CONTRACT_FUNCTIONS.GET_PROPOSAL_DETAILS,
+                            params: [id],
+                            from: accountAddress
+                        });
 
                         const proposal = {
                             id: Number(id),
@@ -117,13 +141,31 @@ const VotesHistory = () => {
                             startDate: details[3],
                             endDate: details[4],
                             options: details[2],
-                            winners: details[7],
-                            isDraw: details[8],
-                            isFinalized: true // For now, treat all proposals as finalized
+                            winners: [],
+                            isDraw: false,
+                            isFinalized: isFinalized
                         };
 
-                        // Always fetch vote counts for all proposals
-                        if (details[2]?.length > 0) {
+                        // Get winners using getProposalWinners function for finalized proposals
+                        if (isFinalized) {
+                            try {
+                                const winnersResult = await readContract({
+                                    contract,
+                                    method: CONTRACT_FUNCTIONS.GET_PROPOSAL_WINNERS,
+                                    params: [id],
+                                    from: accountAddress
+                                });
+                                
+                                proposal.winners = winnersResult[0] || [];
+                                proposal.isDraw = winnersResult[1] || false;
+                            } catch (winnersError) {
+                                console.error('Error fetching winners for created proposal', id, ':', winnersError);
+                                // Keep default empty winners and false isDraw
+                            }
+                        }
+
+                        // Only fetch vote counts for finalized proposals
+                        if (isFinalized && details[2]?.length > 0) {
                             fetchProposalVoteCounts(Number(id), details[2], accountAddress);
                         }
 
@@ -138,14 +180,7 @@ const VotesHistory = () => {
             const participatedProposalDetails = await Promise.all(
                 participatedIds.map(async (id) => {
                     try {
-                        const details = await readContract({
-                            contract,
-                            method: CONTRACT_FUNCTIONS.GET_PROPOSAL_DETAILS,
-                            params: [id],
-                            from: accountAddress
-                        });
-
-                        // Check if proposal is finalized
+                        // Check if proposal is already finalized first
                         let isFinalized = false;
                         try {
                             isFinalized = await readContract({
@@ -155,8 +190,39 @@ const VotesHistory = () => {
                                 from: accountAddress
                             });
                         } catch (finalizedCheckError) {
-                            isFinalized = details[5] === 4;
+                            // If we can't check finalization, assume it's not finalized and try status update
+                            isFinalized = false;
                         }
+
+                        // Only update proposal status if not finalized
+                        if (!isFinalized) {
+                            try {
+                                const updateStatusTransaction = prepareContractCall({
+                                    contract,
+                                    method: CONTRACT_FUNCTIONS.UPDATE_PROPOSAL_STATUS,
+                                    params: [id]
+                                });
+
+                                const updateResult = await sendTransaction({
+                                    transaction: updateStatusTransaction,
+                                    account
+                                });
+                                
+                                // Wait for transaction confirmation
+                                await updateResult.wait();
+                                
+                            } catch (statusUpdateError) {
+                                // Don't throw error - status update is optional but we should try
+                                console.warn(`Status update failed for proposal ${id}:`, statusUpdateError);
+                            }
+                        }
+
+                        const details = await readContract({
+                            contract,
+                            method: CONTRACT_FUNCTIONS.GET_PROPOSAL_DETAILS,
+                            params: [id],
+                            from: accountAddress
+                        });
 
                         const proposal = {
                             id: Number(id),
@@ -165,13 +231,31 @@ const VotesHistory = () => {
                             startDate: details[3],
                             endDate: details[4],
                             options: details[2],
-                            winners: details[7],
-                            isDraw: details[8],
-                            isFinalized: true // For now, treat all proposals as finalized
+                            winners: [],
+                            isDraw: false,
+                            isFinalized: isFinalized
                         };
 
-                        // Always fetch vote counts for all proposals
-                        if (details[2]?.length > 0) {
+                        // Get winners using getProposalWinners function for finalized proposals
+                        if (isFinalized) {
+                            try {
+                                const winnersResult = await readContract({
+                                    contract,
+                                    method: CONTRACT_FUNCTIONS.GET_PROPOSAL_WINNERS,
+                                    params: [id],
+                                    from: accountAddress
+                                });
+                                
+                                proposal.winners = winnersResult[0] || [];
+                                proposal.isDraw = winnersResult[1] || false;
+                            } catch (winnersError) {
+                                console.error('Error fetching winners for participated proposal', id, ':', winnersError);
+                                // Keep default empty winners and false isDraw
+                            }
+                        }
+
+                        // Only fetch vote counts for finalized proposals
+                        if (isFinalized && details[2]?.length > 0) {
                             fetchProposalVoteCounts(Number(id), details[2], accountAddress);
                         }
 
@@ -215,23 +299,39 @@ const VotesHistory = () => {
                 return;
             }
 
-            // Update proposal status (silent operation)
+            // Check if proposal is already finalized first
+            let isFinalized = false;
             try {
-                const updateStatusTransaction = prepareContractCall({
+                isFinalized = await readContract({
                     contract,
-                    method: CONTRACT_FUNCTIONS.UPDATE_PROPOSAL_STATUS,
-                    params: [proposalId]
+                    method: CONTRACT_FUNCTIONS.IS_PROPOSAL_FINALIZED,
+                    params: [proposalId],
+                    from: accountAddress
                 });
+            } catch (finalizedCheckError) {
+                // If we can't check finalization, assume it's not finalized and try status update
+                isFinalized = false;
+            }
 
-                const updateResult = await sendTransaction({
-                    transaction: updateStatusTransaction,
-                    account
-                });
-                
-                await updateResult.wait();
-                
-            } catch (statusUpdateError) {
-                // Silent failure - status update is optional
+            // Only update proposal status if not finalized (silent operation)
+            if (!isFinalized) {
+                try {
+                    const updateStatusTransaction = prepareContractCall({
+                        contract,
+                        method: CONTRACT_FUNCTIONS.UPDATE_PROPOSAL_STATUS,
+                        params: [proposalId]
+                    });
+
+                    const updateResult = await sendTransaction({
+                        transaction: updateStatusTransaction,
+                        account
+                    });
+                    
+                    await updateResult.wait();
+                    
+                } catch (statusUpdateError) {
+                    // Silent failure - status update is optional
+                }
             }
 
             // Get full proposal details
@@ -287,22 +387,7 @@ const VotesHistory = () => {
                 // Non-critical error - user might not have voted
             }
 
-            // Check if proposal is finalized using contract function
-            let isFinalized = false;
-            try {
-                isFinalized = await readContract({
-                    contract,
-                    method: CONTRACT_FUNCTIONS.IS_PROPOSAL_FINALIZED,
-                    params: [proposalId],
-                    from: accountAddress
-                });
-            } catch (finalizedCheckError) {
-                // If we can't check finalization status, fallback to status check
-                isFinalized = proposalDetails[5] === 4;
-            }
-            
-            // For now, treat all proposals as finalized to show vote results
-            setProposalFinalized(true);
+            setProposalFinalized(isFinalized);
 
             // Structure the proposal data
             const proposal = {
@@ -314,14 +399,34 @@ const VotesHistory = () => {
                 endDate: proposalDetails[4],
                 status: proposalDetails[5],
                 voteMutability: proposalDetails[6],
-                winners: proposalDetails[7],
-                isDraw: proposalDetails[8]
+                winners: [],
+                isDraw: false
             };
+
+            // Get winners using getProposalWinners function for finalized proposals
+            if (isFinalized) {
+                try {
+                    const winnersResult = await readContract({
+                        contract,
+                        method: CONTRACT_FUNCTIONS.GET_PROPOSAL_WINNERS,
+                        params: [proposalId],
+                        from: accountAddress
+                    });
+                    
+                    proposal.winners = winnersResult[0] || [];
+                    proposal.isDraw = winnersResult[1] || false;
+                } catch (winnersError) {
+                    console.error('Error fetching winners:', winnersError);
+                    // Keep default empty winners and false isDraw
+                }
+            }
 
             setSelectedProposal(proposal);
 
-            // Always fetch vote counts for all proposals
-            fetchVoteCounts(proposalId, proposalDetails[2], accountAddress);
+            // Only fetch vote counts for finalized proposals
+            if (isFinalized) {
+                fetchVoteCounts(proposalId, proposalDetails[2], accountAddress);
+            }
             setUserVote(currentVote || '');
 
         } catch (error) {
@@ -694,7 +799,6 @@ const VotesHistory = () => {
                         <li><Link to="/about">About Us</Link></li>
                         <li><Link to="/search-proposals">Search Proposals</Link></li>
                         <li><Link to="/addnewvote">Add New Vote</Link></li>
-                        <li><Link className="act" to="/voteshistory">Votes History</Link></li>
                         <li>
                             <UserProfile />
                         </li>
@@ -944,10 +1048,13 @@ const VotesHistory = () => {
                                         </div>
                                     ) : (
                                         <div className="winners-display">
-                                            <strong>🎉 Winner(s):</strong> {selectedProposal.winners.map(winner => {
-                                                const winnerVotes = voteCounts[winner] || 0;
-                                                return `${winner}, with votes ${winnerVotes} out of ${totalVotes}`;
-                                            }).join(' | ')}
+                                            <strong>🎉 Winner(s):</strong> {selectedProposal.winners && selectedProposal.winners.length > 0 ? 
+                                                selectedProposal.winners.map(winner => {
+                                                    const winnerVotes = voteCounts[winner] || 0;
+                                                    return `${winner} (${winnerVotes} votes)`;
+                                                }).join(', ') : 
+                                                'No winners determined yet'
+                                            }
                                         </div>
                                     )}
                                 </div>

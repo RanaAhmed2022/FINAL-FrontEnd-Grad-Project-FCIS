@@ -70,9 +70,8 @@ export default function AboutUs() {
             <ul>
                 <li><Link to="/home">Home</Link></li>
                 <li><Link className="act-ab" to="/about">About Us</Link></li>
-                <li><Link to="/activevotes">Active Votes</Link></li>
+                <li><Link to="/search-proposals">Search Proposals</Link></li>
                 <li><Link to="/addnewvote">Add New Vote</Link></li>
-                <li><Link to="/voteshistory">Votes History</Link></li>
                 <li>
                     <UserProfile />
                 </li>

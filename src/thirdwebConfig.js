@@ -3,7 +3,7 @@ import { inAppWallet, createWallet } from "thirdweb/wallets";
 import { zkSyncSepoliaWithPaymaster } from "./config/paymasterConfig";
 
 const client = createThirdwebClient({
-  clientId: "6e30bbf1a276f1c78c5cecf1b785929b",
+  clientId: process.env.REACT_APP_THIRDWEB_CLIENT_ID,
 });
 
 // Account abstraction configuration for zkSync

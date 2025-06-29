@@ -160,25 +160,41 @@ const ProposalSearch = () => {
                 return;
             }
 
-            // Update proposal status before getting details (silent operation)
+            // Check if proposal is already finalized first
+            let isFinalized = false;
             try {
-                const updateStatusTransaction = prepareContractCall({
+                isFinalized = await readContract({
                     contract,
-                    method: CONTRACT_FUNCTIONS.UPDATE_PROPOSAL_STATUS,
-                    params: [searchId]
+                    method: CONTRACT_FUNCTIONS.IS_PROPOSAL_FINALIZED,
+                    params: [searchId],
+                    from: accountAddress
                 });
+            } catch (finalizedCheckError) {
+                // If we can't check finalization, assume it's not finalized and try status update
+                isFinalized = false;
+            }
 
-                const updateResult = await sendTransaction({
-                    transaction: updateStatusTransaction,
-                    account
-                });
-                
-                // Wait for transaction confirmation
-                await updateResult.wait();
-                
-            } catch (statusUpdateError) {
-                // Don't show error to user - the status update is optional
-                // Status update failed, but this is non-critical
+            // Only update proposal status if not finalized (silent operation)
+            if (!isFinalized) {
+                try {
+                    const updateStatusTransaction = prepareContractCall({
+                        contract,
+                        method: CONTRACT_FUNCTIONS.UPDATE_PROPOSAL_STATUS,
+                        params: [searchId]
+                    });
+
+                    const updateResult = await sendTransaction({
+                        transaction: updateStatusTransaction,
+                        account
+                    });
+                    
+                    // Wait for transaction confirmation
+                    await updateResult.wait();
+                    
+                } catch (statusUpdateError) {
+                    // Don't show error to user - the status update is optional
+                    // Status update failed, but this is non-critical
+                }
             }
 
             // Try different approaches to get proposal details
@@ -242,20 +258,6 @@ const ProposalSearch = () => {
                 // Error getting user vote - this is non-critical
             }
 
-            // Check if proposal is finalized using contract function
-            let isFinalized = true;
-            // try {
-            //     isFinalized = await readContract({
-            //         contract,
-            //         method: CONTRACT_FUNCTIONS.IS_PROPOSAL_FINALIZED,
-            //         params: [searchId],
-            //         from: accountAddress
-            //     });
-            // } catch (finalizedCheckError) {
-            //     // If we can't check finalization status, fallback to status check
-            //     isFinalized = Number(proposalDetails[5]) === 4;
-            // }
-            
             setProposalFinalized(isFinalized);
 
             const proposalData = {
@@ -266,9 +268,27 @@ const ProposalSearch = () => {
                 endDate: proposalDetails[4],
                 status: Number(proposalDetails[5]),
                 voteMutability: Number(proposalDetails[6]),
-                winners: proposalDetails[7],
-                isDraw: proposalDetails[8]
+                winners: [],
+                isDraw: false
             };
+
+            // Get winners using getProposalWinners function for finalized proposals
+            if (isFinalized) {
+                try {
+                    const winnersResult = await readContract({
+                        contract,
+                        method: CONTRACT_FUNCTIONS.GET_PROPOSAL_WINNERS,
+                        params: [searchId],
+                        from: accountAddress
+                    });
+                    
+                    proposalData.winners = winnersResult[0] || [];
+                    proposalData.isDraw = winnersResult[1] || false;
+                } catch (winnersError) {
+                    console.error('Error fetching winners:', winnersError);
+                    // Keep default empty winners and false isDraw
+                }
+            }
 
             setProposal(proposalData);
 
@@ -528,7 +548,6 @@ const ProposalSearch = () => {
                         <li><Link to="/about">About Us</Link></li>
                         <li><Link className="act" to="/search-proposals">Search Proposals</Link></li>
                         <li><Link to="/addnewvote">Add New Vote</Link></li>
-                        <li><Link to="/voteshistory">Votes History</Link></li>
                         <li>
                             <UserProfile />
                         </li>
@@ -684,10 +703,13 @@ const ProposalSearch = () => {
                                         </div>
                                     ) : (
                                         <div className="winners-display">
-                                            <strong>🎉 Winner(s):</strong> {proposal.winners.map(winner => {
-                                                const winnerVotes = voteCounts[winner] || 0;
-                                                return `${winner}, with votes ${winnerVotes} out of ${totalVotes}`;
-                                            }).join(' | ')}
+                                            <strong>🎉 Winner(s):</strong> {proposal.winners && proposal.winners.length > 0 ? 
+                                                proposal.winners.map(winner => {
+                                                    const winnerVotes = voteCounts[winner] || 0;
+                                                    return `${winner} (${winnerVotes} votes)`;
+                                                }).join(', ') : 
+                                                'No winners determined yet'
+                                            }
                                         </div>
                                     )}
                                 </div>

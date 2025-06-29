@@ -58,9 +58,9 @@ const UserProfile = () => {
         }
     };
 
-    const handlePersonalInfo = () => {
+    const handleVotesHistory = () => {
         setDropdownOpen(false);
-        navigate('/personalinfo');
+        navigate('/voteshistory');
     };
 
     const handleLogout = async () => {
@@ -170,7 +170,7 @@ const UserProfile = () => {
                         </svg>
                         {copied ? 'Copied!' : 'Copy Address'}
                     </button>
-                    <button onClick={handlePersonalInfo} className="profile-menu-btn">
+                    <button onClick={handleVotesHistory} className="profile-menu-btn">
                         <svg 
                             width="16" 
                             height="16" 
@@ -178,11 +178,11 @@ const UserProfile = () => {
                             fill="none"
                         >
                             <path 
-                                d="M8 8C10.2091 8 12 6.20914 12 4C12 1.79086 10.2091 0 8 0C5.79086 0 4 1.79086 4 4C4 6.20914 5.79086 8 8 8ZM8 10C5.33333 10 0 11.3333 0 14V16H16V14C16 11.3333 10.6667 10 8 10Z" 
+                                d="M3 1C2.46957 1 1.96086 1.21071 1.58579 1.58579C1.21071 1.96086 1 2.46957 1 3V13C1 13.5304 1.21071 14.0391 1.58579 14.4142C1.96086 14.7893 2.46957 15 3 15H13C13.5304 15 14.0391 14.7893 14.4142 14.4142C14.7893 14.0391 15 13.5304 15 13V3C15 2.46957 14.7893 1.96086 14.4142 1.58579C14.0391 1.21071 13.5304 1 13 1H3ZM3 3H13V5H3V3ZM3 7H13V9H3V7ZM3 11H13V13H3V11Z" 
                                 fill="currentColor"
                             />
                         </svg>
-                        Personal Info
+                        Votes History
                     </button>
                     <button onClick={handleLogout} className="logout-btn">
                         <svg 

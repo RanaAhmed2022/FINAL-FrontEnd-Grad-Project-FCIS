@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react';
 import { useActiveAccount } from "thirdweb/react";
 import { readContract, prepareContractCall, sendTransaction, waitForReceipt } from "thirdweb";
+import { privateKeyToAccount } from "thirdweb/wallets";
 import { getVotingFacadeContract, VoteMutability, CONTRACT_FUNCTIONS, statusDisplayMap, mutabilityDisplayMap, VOTING_FACADE_ADDRESS } from "../config/contractConfig";
+import { client } from "../thirdwebConfig";
 import { getTransactionOptions, isGasSponsoringEnabled } from "../config/paymasterConfig";
 import { ethers } from 'ethers';
 
@@ -150,6 +152,42 @@ export const useVotingContract = () => {
         setError('');
 
         try {
+            // Check if proposal is already finalized first
+            let isFinalized = false;
+            try {
+                isFinalized = await readContract({
+                    contract,
+                    method: CONTRACT_FUNCTIONS.IS_PROPOSAL_FINALIZED,
+                    params: [proposalId]
+                });
+            } catch (finalizedCheckError) {
+                // If we can't check finalization, assume it's not finalized and try status update
+                isFinalized = false;
+            }
+
+            // Only update proposal status if not finalized
+            if (!isFinalized) {
+                try {
+                    const updateStatusTransaction = prepareContractCall({
+                        contract,
+                        method: CONTRACT_FUNCTIONS.UPDATE_PROPOSAL_STATUS,
+                        params: [proposalId]
+                    });
+
+                    const updateResult = await sendTransaction({
+                        transaction: updateStatusTransaction,
+                        account
+                    });
+                    
+                    // Wait for transaction confirmation
+                    await updateResult.wait();
+                    
+                } catch (statusUpdateError) {
+                    // Don't throw error - status update is optional but we should try
+                    console.warn('Status update failed:', statusUpdateError);
+                }
+            }
+
             const proposalDetails = await readContract({
                 contract,
                 method: CONTRACT_FUNCTIONS.GET_PROPOSAL_DETAILS,
@@ -456,16 +494,26 @@ export const useVotingContract = () => {
         }
     };
 
-    // Register voter
+    // Register voter - Admin only function using specific private key
     const registerVoter = async (voterAddress, hashedNID, embeddings) => {
-        if (!account) {
-            throw new Error('Please connect your wallet');
-        }
-
         setLoading(true);
         setError('');
 
         try {
+            // Get admin private key from environment
+            const adminPrivateKey = process.env.REACT_APP_ADMIN_PRIVATE_KEY;
+            if (!adminPrivateKey) {
+                throw new Error('Admin private key not found in environment variables');
+            }
+
+            // Create admin account from private key
+            const adminAccount = privateKeyToAccount({
+                client,
+                privateKey: adminPrivateKey,
+            });
+
+            console.log('Using admin account for registerVoter:', adminAccount.address);
+
             const transaction = prepareContractCall({
                 contract,
                 method: CONTRACT_FUNCTIONS.REGISTER_VOTER,
@@ -474,7 +522,7 @@ export const useVotingContract = () => {
 
             const result = await sendTransaction({
                 transaction,
-                account,
+                account: adminAccount,
                 ...getTransactionOptions('registerVoter')
             });
 

@@ -62,5 +62,6 @@ export const CONTRACT_FUNCTIONS = {
     IS_PROPOSAL_EXISTS: "function isProposalExists(uint256 proposalId) external view returns (bool)",
     VERIFY_VOTER: "function verifyVoter(address voter) external",
     IS_VOTER_VERIFIED: "function isVoterVerified(address voter) external view returns (bool)",
-    REMOVE_USER_PROPOSAL: "function removeProposal(uint256 proposalId) external"
+    REMOVE_USER_PROPOSAL: "function removeProposal(uint256 proposalId) external",
+    GET_PROPOSAL_WINNERS: "function getProposalWinners(uint256 proposalId) external view returns (string[] memory winners, bool isDraw)"
 }; 
