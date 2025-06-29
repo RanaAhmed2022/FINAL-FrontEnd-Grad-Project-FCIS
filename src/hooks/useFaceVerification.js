@@ -112,6 +112,59 @@ export const useFaceVerification = () => {
   }, []);
 
   /**
+   * Verify ID and compare face with ID photo
+   * @param {File} idImageFile - The uploaded ID image
+   * @param {File} faceImageFile - The captured face image
+   * @returns {Promise<Object|null>} - Verification result with extracted NID or null if failed
+   */
+  const verifyIdAndFace = useCallback(async (idImageFile, faceImageFile) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Validate both files
+      const idValidation = faceVerificationService.validateImageFile(idImageFile);
+      if (!idValidation.valid) {
+        throw new Error(`ID Image: ${idValidation.error}`);
+      }
+
+      const faceValidation = faceVerificationService.validateImageFile(faceImageFile);
+      if (!faceValidation.valid) {
+        throw new Error(`Face Image: ${faceValidation.error}`);
+      }
+
+      console.log('🆔 Starting ID verification and face comparison...');
+      console.log(`   ID Image: ${idImageFile.name} (${(idImageFile.size / 1024).toFixed(1)} KB)`);
+      console.log(`   Face Image: ${faceImageFile.name} (${(faceImageFile.size / 1024).toFixed(1)} KB)`);
+
+      const result = await faceVerificationService.verifyIdAndFace(idImageFile, faceImageFile);
+      
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      console.log('✅ ID verification completed successfully:');
+      console.log(`   Extracted NID: ${result.extractedNid}`);
+      console.log(`   Face Match: ${result.faceVerification.faces_match}`);
+      console.log(`   Face Similarity: ${result.faceVerification.accuracy_percentage}%`);
+      console.log(`   ID Authenticity: ${result.authenticityCheck.is_real ? 'Real' : 'Fake'}`);
+
+      return {
+        extractedNid: result.extractedNid,
+        faceVerification: result.faceVerification,
+        authenticityCheck: result.authenticityCheck,
+        message: result.message
+      };
+    } catch (err) {
+      console.error('❌ ID verification error:', err.message);
+      setError(err.message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /**
    * Process registration workflow: extract embeddings and return them for blockchain storage
    * @param {File} imageFile - The registration image
    * @returns {Promise<Array|null>} - Embeddings for storage or null if failed
@@ -171,6 +224,7 @@ export const useFaceVerification = () => {
     checkApiStatus,
     extractEmbeddings,
     verifyFace,
+    verifyIdAndFace,
     processRegistration,
     processLogin,
     

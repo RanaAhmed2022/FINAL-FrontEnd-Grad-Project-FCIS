@@ -128,6 +128,79 @@ class FaceVerificationService {
   }
 
   /**
+   * Verify ID and compare face with ID photo
+   * @param {File} idImageFile - The uploaded ID image file
+   * @param {File} faceImageFile - The captured face image file
+   * @returns {Promise<Object>} - Response with verification result and extracted NID
+   */
+  async verifyIdAndFace(idImageFile, faceImageFile) {
+    try {
+      console.log('🔄 Making API call to /verify_id_and_face...');
+      console.log(`📷 ID Image: ${idImageFile.name} (${(idImageFile.size / 1024).toFixed(1)} KB)`);
+      console.log(`📷 Face Image: ${faceImageFile.name} (${(faceImageFile.size / 1024).toFixed(1)} KB)`);
+
+      const formData = new FormData();
+      formData.append('id_image', idImageFile);
+      formData.append('face_image', faceImageFile);
+
+      console.log('🌐 Sending request to API...');
+      const response = await fetch(`${FACE_API_BASE_URL}/verify_id_and_face`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      console.log('📥 Response received from API');
+      console.log(`📊 Response Status: ${response.status} (${response.ok ? 'OK' : 'ERROR'})`);
+      console.log(`📋 Response Headers:`, Object.fromEntries(response.headers.entries()));
+      
+      const data = await response.json();
+      
+      console.log('📡 Full API Response received:');
+      console.log('  Raw response data:', data);
+      console.log('  Response breakdown:', {
+        status: response.status,
+        ok: response.ok,
+        success: data.success,
+        extracted_nid: data.extracted_nid,
+        face_verification: data.face_verification,
+        authenticity_check: data.authenticity_check,
+        error: data.error,
+        details: data.details
+      });
+      
+      // If response is not ok, log the full error details
+      if (!response.ok) {
+        console.error('❌ API ERROR DETAILS:');
+        console.error('  Status Code:', response.status);
+        console.error('  Status Text:', response.statusText);
+        console.error('  Full Error Response:', data);
+        console.error('  Error Message:', data.error || 'No error message provided');
+        console.error('  Error Details:', data.details || 'No error details provided');
+        
+        // Enhanced error message with all available details
+        const errorMessage = data.error || `HTTP error! status: ${response.status}`;
+        const errorDetails = data.details ? ` Details: ${data.details}` : '';
+        throw new Error(`${errorMessage}${errorDetails}`);
+      }
+
+      return {
+        success: true,
+        extractedNid: data.extracted_nid,
+        faceVerification: data.face_verification,
+        authenticityCheck: data.authenticity_check,
+        message: data.message
+      };
+    } catch (error) {
+      console.error('❌ Error verifying ID and face:', error);
+      console.error('❌ Error stack:', error.stack);
+      return {
+        success: false,
+        error: error.message || 'Failed to verify ID and face'
+      };
+    }
+  }
+
+  /**
    * Check if the face verification API is available
    * @returns {Promise<boolean>} - Whether the API is available
    */

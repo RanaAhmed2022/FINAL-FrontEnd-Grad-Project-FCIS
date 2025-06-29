@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useActiveAccount } from "thirdweb/react";
+import { useActiveAccount, ConnectButton } from "thirdweb/react";
 import { keccak256, toBytes } from "thirdweb/utils";
 import { useFaceVerification } from '../../hooks/useFaceVerification';
 import { useVotingContract } from '../../hooks/useVotingContract';
+import { useVerificationStatus } from '../../hooks/useVerificationStatus';
+import { client, wallets } from "../../thirdwebConfig";
+import { zkSyncSepolia } from "thirdweb/chains";
 import './Registration.css';
 import './../../index';
 
 const Registration = () => {
     const navigate = useNavigate();
     const account = useActiveAccount();
+    
+    // All state hooks first (before any conditional logic)
     const [showCamera, setShowCamera] = useState(false);
     const [capturedImage, setCapturedImage] = useState(null);
     const videoRef = useRef(null);
@@ -24,59 +29,34 @@ const Registration = () => {
         hasChecked: false
     });
     
-    // Face verification hook
+    const [formData, setFormData] = useState({
+        idNumber: '',
+        idFront: null,
+        userImage: null,
+    });
+    
+    const [fileNames, setFileNames] = useState({
+        idFront: 'No file chosen',
+        userImage: 'No file chosen'
+    });
+    
+    // All custom hooks
     const { 
         processRegistration, 
+        verifyIdAndFace,
         isLoading: faceLoading, 
         error: faceError, 
         clearError,
         checkApiStatus 
     } = useFaceVerification();
     
-    // Voting contract hook
     const { registerVoter, isNIDRegistered } = useVotingContract();
+    const { isChecking: checkingVerification, isVerified, hasChecked } = useVerificationStatus();
 
-    // Check face verification API status on mount
+    // All effect hooks
     useEffect(() => {
         checkApiStatus();
     }, [checkApiStatus]);
-
-    // Copy wallet address to clipboard
-    const copyAddressToClipboard = async () => {
-        if (!account?.address) return;
-        
-        try {
-            await navigator.clipboard.writeText(account.address);
-            setAddressCopied(true);
-            setTimeout(() => setAddressCopied(false), 2000); // Reset after 2 seconds
-        } catch (err) {
-            console.error('Failed to copy address:', err);
-            // Fallback for older browsers
-            const textArea = document.createElement('textarea');
-            textArea.value = account.address;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            setAddressCopied(true);
-            setTimeout(() => setAddressCopied(false), 2000);
-        }
-    };
-
-
-
-    // Function to stop camera stream
-    const stopCamera = () => {
-        if (videoRef.current && videoRef.current.srcObject) {
-            const stream = videoRef.current.srcObject;
-            const tracks = stream.getTracks();
-            tracks.forEach(track => {
-                track.stop();
-                console.log('Camera track stopped:', track.kind);
-            });
-            videoRef.current.srcObject = null;
-        }
-    };
 
     useEffect(() => {
         if (showCamera) {
@@ -111,6 +91,39 @@ const Registration = () => {
         };
     }, []);
 
+    // Function definitions (must be after hooks but before conditional rendering)
+    const copyAddressToClipboard = async () => {
+        if (!account?.address) return;
+        
+        try {
+            await navigator.clipboard.writeText(account.address);
+            setAddressCopied(true);
+            setTimeout(() => setAddressCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy address:', err);
+            const textArea = document.createElement('textarea');
+            textArea.value = account.address;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            setAddressCopied(true);
+            setTimeout(() => setAddressCopied(false), 2000);
+        }
+    };
+
+    const stopCamera = () => {
+        if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject;
+            const tracks = stream.getTracks();
+            tracks.forEach(track => {
+                track.stop();
+                console.log('Camera track stopped:', track.kind);
+            });
+            videoRef.current.srcObject = null;
+        }
+    };
+
     const capturePhoto = () => {
         const canvas = canvasRef.current;
         const video = videoRef.current;
@@ -121,9 +134,8 @@ const Registration = () => {
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             const dataURL = canvas.toDataURL('image/png');
             setCapturedImage(dataURL);
-            setFormData({ ...formData, userImage: dataURL }); // Save in form
+            setFormData({ ...formData, userImage: dataURL });
             
-            // Immediately stop camera after capture
             if (video.srcObject) {
                 const stream = video.srcObject;
                 const tracks = stream.getTracks();
@@ -138,7 +150,6 @@ const Registration = () => {
     };
 
     const closeCamera = () => {
-        // Immediately stop camera before state change
         if (videoRef.current && videoRef.current.srcObject) {
             const stream = videoRef.current.srcObject;
             const tracks = stream.getTracks();
@@ -148,7 +159,6 @@ const Registration = () => {
             });
             videoRef.current.srcObject = null;
             
-            // Small delay to ensure browser processes the cleanup
             setTimeout(() => {
                 setShowCamera(false);
             }, 100);
@@ -157,20 +167,6 @@ const Registration = () => {
         }
     };
 
-
-    const [formData, setFormData] = useState({
-        idNumber: '',
-        idFront: null,
-        userImage: null,
-    });
-
-    
-    const [fileNames, setFileNames] = useState({
-        idFront: 'No file chosen',
-        userImage: 'No file chosen'
-    });
-
-    // Check if NID is already registered
     const checkNIDRegistration = async (nidValue) => {
         if (!nidValue || nidValue.length !== 14) {
             setNidValidation({
@@ -187,7 +183,6 @@ const Registration = () => {
         }));
 
         try {
-            // Hash the NID to check registration status
             const hashedNID = keccak256(toBytes(nidValue));
             const isRegistered = await isNIDRegistered(hashedNID);
             
@@ -209,14 +204,12 @@ const Registration = () => {
     const handleChange = (e) => {
         const { name, value, files } = e.target;
         if (files) {
-        setFormData({ ...formData, [name]: files[0] });
-        setFileNames({ ...fileNames, [name]: files[0].name });
+            setFormData({ ...formData, [name]: files[0] });
+            setFileNames({ ...fileNames, [name]: files[0].name });
         } else {
             setFormData({ ...formData, [name]: value });
             
-            // Check NID registration when user enters NID
             if (name === 'idNumber') {
-                // Debounce the check by adding a small delay
                 setTimeout(() => {
                     checkNIDRegistration(value);
                 }, 500);
@@ -224,7 +217,6 @@ const Registration = () => {
         }
     };
 
-    // Convert data URL to File object
     const dataURLtoFile = (dataURL, filename) => {
         const arr = dataURL.split(',');
         const mime = arr[0].match(/:(.*?);/)[1];
@@ -248,16 +240,13 @@ const Registration = () => {
             return;
         }
 
-        // Check if NID is already registered
         if (nidValidation.hasChecked && nidValidation.isRegistered) {
             alert('This National ID is already registered. Please use a different National ID.');
             return;
         }
 
-        // If we haven't checked yet, check now
         if (!nidValidation.hasChecked) {
             await checkNIDRegistration(idNumber);
-            // Re-check after the validation
             if (nidValidation.isRegistered) {
                 alert('This National ID is already registered. Please use a different National ID.');
                 return;
@@ -283,11 +272,35 @@ const Registration = () => {
         clearError();
 
         try {
-            // Convert captured image to File object for face verification API
             const imageFile = dataURLtoFile(userImage, 'user-photo.png');
             
-            // Extract face embeddings
-            console.log('Extracting face embeddings...');
+            console.log('🆔 Step 1: Starting ID verification and face comparison...');
+            
+            const idVerificationResult = await verifyIdAndFace(idFront, imageFile);
+            
+            if (!idVerificationResult) {
+                console.error('❌ ID verification returned null/undefined result');
+                throw new Error('ID verification failed. Please check your ID image and captured photo.');
+            }
+
+            console.log('✅ ID verification completed successfully');
+
+            const extractedNidStr = idVerificationResult.extractedNid.toString();
+            
+            console.log('🔍 NID COMPARISON DEBUG:');
+            console.log(`   📝 Manually Entered NID: "${idNumber}" (length: ${idNumber.length})`);
+            console.log(`   🆔 Extracted from ID Card: "${extractedNidStr}" (length: ${extractedNidStr.length})`);
+            
+            if (extractedNidStr !== idNumber) {
+                console.error('❌ NID MISMATCH DETECTED!');
+                throw new Error(
+                    `The National ID number extracted from your ID card (${extractedNidStr}) does not match the one you entered (${idNumber}). Please check both and try again.`
+                );
+            }
+
+            console.log('✅ NID verification: Extracted NID matches entered NID');
+            console.log('👤 Step 2: Extracting face embeddings for blockchain storage...');
+            
             const embeddings = await processRegistration(imageFile);
             
             if (!embeddings) {
@@ -295,31 +308,29 @@ const Registration = () => {
             }
 
             console.log('Face embeddings extracted successfully, registering voter...');
-            console.log('Extracted face embeddings:', embeddings);
-            console.log('Embeddings length:', embeddings.length);
-            console.log('First 10 embedding values:', embeddings.slice(0, 10));
             
-            // Scale embeddings by 1e18 for blockchain storage (convert float to int)
             const scaledEmbeddings = embeddings.map(value => Math.round(value * 1e18));
-            console.log('Scaled embeddings (first 10):', scaledEmbeddings.slice(0, 10));
-            console.log('Scaling factor applied: 1e18');
-            
-            // Hash the national ID to bytes32 for blockchain storage
             const hashedNID = keccak256(toBytes(idNumber));
             
-            console.log('Hashing NID:', idNumber, '→', hashedNID);
+            console.log('⛓️ Step 3: Registering voter on blockchain...');
             
-            // Call registerVoter with voter address, hashed national ID, and scaled embeddings
             await registerVoter(account.address, hashedNID, scaledEmbeddings);
             
             console.log('Registration completed successfully');
             
-            // Show success message and prepare for redirect
-            alert('Registration successful! Face verification has been set up. Redirecting to home page...');
+            const successMessage = `Registration successful! 
+            
+✅ ID Verification: Passed
+✅ Face Match: ${idVerificationResult.faceVerification.accuracy_percentage}% accuracy
+✅ NID Extracted: ${extractedNidStr}
+✅ Blockchain Registration: Complete
+
+Redirecting to home page...`;
+            
+            alert(successMessage);
             
             setIsRedirecting(true);
             
-            // Navigate to home page after a short delay
             setTimeout(() => {
                 navigate('/home');
             }, 1500);
@@ -333,10 +344,149 @@ const Registration = () => {
         }
     };
 
+    // Conditional rendering (after all hooks are called)
+    // If user is already verified, show a different UI
+    if (!checkingVerification && hasChecked && isVerified && account) {
+        return (
+            <div className="reg-container">
+                <div className="reg-box">
+                    <div className="form-header">
+                        <h1 className="form-title">Already Registered</h1>
+                        <div style={{
+                            color: '#4caf50',
+                            backgroundColor: '#e8f5e8',
+                            padding: '20px',
+                            borderRadius: '10px',
+                            textAlign: 'center',
+                            margin: '20px 0'
+                        }}>
+                            <div style={{ fontSize: '48px', marginBottom: '15px' }}>✅</div>
+                            <h2 style={{ color: '#2e7d32', marginBottom: '10px' }}>
+                                Welcome Back!
+                            </h2>
+                            <p style={{ color: '#2e7d32', marginBottom: '20px' }}>
+                                Your account is already verified and registered for voting.
+                            </p>
+                            <div style={{
+                                backgroundColor: '#c8e6c9',
+                                padding: '10px',
+                                borderRadius: '5px',
+                                marginBottom: '20px'
+                            }}>
+                                <strong>Wallet:</strong> {account.address.slice(0, 10)}...{account.address.slice(-8)}
+                            </div>
+                        </div>
+                        
+                        <div style={{ 
+                            display: 'flex', 
+                            gap: '15px', 
+                            justifyContent: 'center',
+                            flexWrap: 'wrap'
+                        }}>
+                            <button 
+                                onClick={() => navigate('/home')}
+                                style={{
+                                    backgroundColor: '#4caf50',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '12px 24px',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer',
+                                    fontSize: '16px',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                🏠 Go to Home
+                            </button>
+                            <button 
+                                onClick={() => navigate('/search-proposals')}
+                                style={{
+                                    backgroundColor: '#2196f3',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '12px 24px',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer',
+                                    fontSize: '16px',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                🗳️ View Proposals
+                            </button>
+                            <button 
+                                onClick={() => navigate('/addnewvote')}
+                                style={{
+                                    backgroundColor: '#ff9800',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '12px 24px',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer',
+                                    fontSize: '16px',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                ➕ Create Proposal
+                            </button>
+                        </div>
+                        
+                        <p style={{ 
+                            textAlign: 'center', 
+                            marginTop: '20px',
+                            color: '#666',
+                            fontSize: '14px'
+                        }}>
+                            You can now access all voting features. Happy voting! 🎉
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Show loading if still checking verification status
+    if (checkingVerification) {
+        return (
+            <div className="reg-container">
+                <div className="reg-box">
+                    <div className="form-header">
+                        <h1 className="form-title">Checking Registration Status</h1>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            flexDirection: 'column',
+                            padding: '40px 20px'
+                        }}>
+                            <div style={{
+                                border: '4px solid #f3f3f3',
+                                borderTop: '4px solid #3498db',
+                                borderRadius: '50%',
+                                width: '50px',
+                                height: '50px',
+                                animation: 'spin 1s linear infinite',
+                                marginBottom: '20px'
+                            }}></div>
+                            <p>Verifying your registration status...</p>
+                            <style>
+                                {`
+                                    @keyframes spin {
+                                        0% { transform: rotate(0deg); }
+                                        100% { transform: rotate(360deg); }
+                                    }
+                                `}
+                            </style>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Regular registration form for unverified users
     return (
         <div className="reg-container">
             <div className="reg-box">
-
                 <form onSubmit={validateAndSubmit}>
                     <div className="form-header">
                         <h1 className="form-title">User Registration</h1>
@@ -478,7 +628,6 @@ const Registration = () => {
                                         type="button"
                                         className="retake-btn-reg" 
                                         onClick={() => {
-                                            // Stop any existing camera stream before retaking
                                             if (videoRef.current && videoRef.current.srcObject) {
                                                 const stream = videoRef.current.srcObject;
                                                 const tracks = stream.getTracks();
@@ -500,49 +649,74 @@ const Registration = () => {
                         )}
                     </div>
 
-
                     {faceError && (
                         <div className="error-message" style={{ color: 'red', marginBottom: '10px', textAlign: 'center' }}>
                             {faceError}
                         </div>
                     )}
                     
-                    <button 
-                        type="submit" 
-                        disabled={!account || isSubmitting || faceLoading || isRedirecting || (nidValidation.hasChecked && nidValidation.isRegistered)}
-                        style={{ 
-                            opacity: (!account || isSubmitting || faceLoading || isRedirecting || (nidValidation.hasChecked && nidValidation.isRegistered)) ? 0.6 : 1 
-                        }}
-                    >
-                        {!account ? 'Connect Wallet First' : 
-                         (nidValidation.hasChecked && nidValidation.isRegistered) ? 'NID Already Registered' :
-                         isRedirecting ? 'Redirecting to Home...' :
-                         (isSubmitting || faceLoading ? 'Processing...' : 'Register')}
-                    </button>
-                    <p className="acountlogin-reg">Already have an account? Please <Link to="/login">Login</Link></p>
+                    {!account ? (
+                        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                            <ConnectButton
+                                client={client}
+                                wallets={wallets}
+                                chain={zkSyncSepolia}
+                                connectButton={{
+                                    label: "Connect Wallet to Register",
+                                    style: {
+                                        fontSize: '16px',
+                                        padding: '12px 24px',
+                                        borderRadius: '8px',
+                                        backgroundColor: '#3498db',
+                                        color: 'white',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        fontWeight: 'bold',
+                                        width: '100%'
+                                    }
+                                }}
+                                connectModal={{
+                                    size: "wide",
+                                    title: "Connect to Register for Voting",
+                                    titleIcon: "🗳️",
+                                    showThirdwebBranding: false
+                                }}
+                            />
+                        </div>
+                    ) : (
+                        <button 
+                            type="submit" 
+                            disabled={isSubmitting || faceLoading || isRedirecting || (nidValidation.hasChecked && nidValidation.isRegistered)}
+                            style={{ 
+                                opacity: (isSubmitting || faceLoading || isRedirecting || (nidValidation.hasChecked && nidValidation.isRegistered)) ? 0.6 : 1 
+                            }}
+                        >
+                            {(nidValidation.hasChecked && nidValidation.isRegistered) ? 'NID Already Registered' :
+                             isRedirecting ? 'Redirecting to Home...' :
+                             (isSubmitting || faceLoading ? 'Processing...' : 'Register')}
+                        </button>
+                    )}
+
                 </form>
             </div>
         
-
-        {showCamera && (
-            <div className="camera-modal-reg">
-                <div className="camera-content-reg">
-                    <video ref={videoRef} autoPlay className="camera-video-reg" />
-                    <canvas ref={canvasRef} style={{ display: 'none' }} />
-                    <div className="camera-controls-reg">
-                        <button className="capture-btn-reg" onClick={capturePhoto}>
-                            Capture Photo
-                        </button>
-                        <button className="close-camera-btn-reg" onClick={closeCamera}>
-                            Cancel
-                        </button>
+            {showCamera && (
+                <div className="camera-modal-reg">
+                    <div className="camera-content-reg">
+                        <video ref={videoRef} autoPlay className="camera-video-reg" />
+                        <canvas ref={canvasRef} style={{ display: 'none' }} />
+                        <div className="camera-controls-reg">
+                            <button className="capture-btn-reg" onClick={capturePhoto}>
+                                Capture Photo
+                            </button>
+                            <button className="close-camera-btn-reg" onClick={closeCamera}>
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        )}
-
-    </div>
-        
+            )}
+        </div>
     );
 };
 
